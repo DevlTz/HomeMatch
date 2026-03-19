@@ -1,0 +1,22 @@
+# Ambiente
+.env
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+media/
+
+# Docker
+postgres_data/
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
