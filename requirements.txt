@@ -1,0 +1,9 @@
+Django==5.2
+djangorestframework==3.16.0
+djangorestframework-simplejwt==5.5.0
+django-filter==25.1
+django-cors-headers
+psycopg2-binary==2.9.10
+python-decouple==3.8
+Markdown==3.8
+pillow==11.2.1
