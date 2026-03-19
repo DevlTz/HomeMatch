@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # tools/run_reports.sh
-# Run static analysis tools and save organized reports in refactoring/reports/
+# HomeMatch — Executa ferramentas de análise estática e salva relatórios organizados
 #
-# Features:
-#  - options: --sprint/-s, --tools/-t, --fail-on, --scheme, --src, --reports, --dry-run, --black-mode
-#  - output scheme: simple or nested (default nested)
-#  - configurable exit code via --fail-on (any | none | comma-list)
-#  - summary.txt generated in each sprint dir with timestamps and exit codes
-#  - uses set -euo pipefail and traps
+# Funcionalidades:
+#  - opções: --sprint/-s, --tools/-t, --fail-on, --scheme, --src, --reports, --dry-run, --black-mode
+#  - esquema de saída: simple ou nested (padrão: nested)
+#  - código de saída configurável via --fail-on (any | none | lista separada por vírgula)
+#  - summary.txt gerado em cada diretório de sprint com timestamps e códigos de saída
+#  - usa set -euo pipefail e traps
 
 # --------------------
-# Colors & logging
+# Cores & logging
 # --------------------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -19,7 +19,7 @@ BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 WHITE='\033[1;37m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 BOLD='\033[1m'
 
 log() {
@@ -28,19 +28,19 @@ log() {
     printf "${CYAN}[%s]${NC} %s\n" "$timestamp" "$*"
 }
 
-log_success() {
+log_sucesso() {
     local timestamp
     timestamp="$(date --iso-8601=seconds 2>/dev/null || date -u +"%Y-%m-%dT%H:%M:%SZ")"
     printf "${GREEN}✓ [%s]${NC} %s\n" "$timestamp" "$*"
 }
 
-log_error() {
+log_erro() {
     local timestamp
     timestamp="$(date --iso-8601=seconds 2>/dev/null || date -u +"%Y-%m-%dT%H:%M:%SZ")"
     printf "${RED}✗ [%s]${NC} %s\n" "$timestamp" "$*" >&2
 }
 
-log_warning() {
+log_aviso() {
     local timestamp
     timestamp="$(date --iso-8601=seconds 2>/dev/null || date -u +"%Y-%m-%dT%H:%M:%SZ")"
     printf "${YELLOW}⚠ [%s]${NC} %s\n" "$timestamp" "$*"
@@ -52,93 +52,92 @@ log_info() {
     printf "${BLUE}ℹ [%s]${NC} %s\n" "$timestamp" "$*"
 }
 
-print_header() {
+exibir_cabecalho() {
     echo
     printf "${PURPLE}${BOLD}"
     printf "╔══════════════════════════════════════════════════════════════════════════════╗\n"
-    printf "║                          🔍 CODE QUALITY ANALYSIS 🔍                        ║\n"
-    printf "║                              Sprint: %-3s | Scheme: %-8s                ║\n" "$sprint" "$scheme"
+    printf "║                        🔍 ANÁLISE DE QUALIDADE DE CÓDIGO 🔍                 ║\n"
+    printf "║                      HomeMatch — Sprint: %-3s | Esquema: %-8s           ║\n" "$sprint" "$scheme"
     printf "╚══════════════════════════════════════════════════════════════════════════════╝\n"
     printf "${NC}"
     echo
-    printf "${WHITE}📁 Source Directory:${NC} %s\n" "$SRC_DIR"
-    printf "${WHITE}📊 Reports Directory:${NC} %s\n" "$REPORTS_DIR"
-    printf "${WHITE}🛠️  Tools to run:${NC} %s\n" "${TOOLS_TO_RUN[*]}"
-    printf "${WHITE}⚙️  Fail policy:${NC} %s\n" "$fail_on"
+    printf "${WHITE}📁 Diretório fonte:${NC} %s\n" "$SRC_DIR"
+    printf "${WHITE}📊 Diretório de relatórios:${NC} %s\n" "$REPORTS_DIR"
+    printf "${WHITE}🛠️  Ferramentas a executar:${NC} %s\n" "${TOOLS_TO_RUN[*]}"
+    printf "${WHITE}⚙️  Política de falha:${NC} %s\n" "$fail_on"
     echo
 }
 
 set -euo pipefail
 
 # --------------------
-# Defaults / Configuration
+# Configurações padrão
 # --------------------
-SRC_DIR="${SRC_DIR:-../src/djangoproject/}"
-REPORTS_DIR="${REPORTS_DIR:-../refactoring/reports}"
+SRC_DIR="${SRC_DIR:-apps/}"
+REPORTS_DIR="${REPORTS_DIR:-tools/reports}"
 DEFAULT_SPRINT=1
 sprint="${DEFAULT_SPRINT}"
-scheme="nested" # 'nested' or 'simple'
+scheme="nested"
 DRY_RUN=0
-black_mode="check" # 'check' or 'format'
+black_mode="check"
 
-# Tools registration: keys and default commands (will be partially recomputed later)
+# --------------------
+# Registro de ferramentas
+# --------------------
 declare -A TOOL_CMD
-# Run pylint from inside the SRC_DIR so package modules resolve correctly.
-# Assumes package root is 'djangoproject' inside SRC_DIR (adjust if different).
-TOOL_CMD[pylint]="(cd \"${SRC_DIR}\" && pylint djangoproject users posts reviews)"
-# Keep Black's default line length (88) consistent with Flake8 to avoid conflicts.
-# Exclude common generated folders (migrations, venv, node_modules).
-TOOL_CMD[flake8]="flake8 --max-line-length=88 --exclude=migrations,venv,node_modules \"${SRC_DIR}\""
-# Vulture tends to report false positives for Django settings and migrations; exclude them.
-TOOL_CMD[vulture]="vulture \"${SRC_DIR}\" --exclude 'migrations|settings.py'"
-TOOL_CMD[black]="black --${black_mode} \"${SRC_DIR}\""
-TOOL_CMD[radon-mi]="radon mi -s \"${SRC_DIR}\""
-TOOL_CMD[radon-cc]="radon cc -a -s \"${SRC_DIR}\""
-TOOL_CMD[radon-raw]="radon raw \"${SRC_DIR}\""
 
-# Default order
-DEFAULT_TOOLS=(pylint flake8 vulture black radon-mi radon-cc radon-raw)
+TOOL_CMD[pylint]="pylint apps/ --disable=C0114,C0115,C0116 --ignore=migrations"
+TOOL_CMD[flake8]="flake8 --max-line-length=88 --exclude=migrations,venv,node_modules apps/"
+TOOL_CMD[vulture]="vulture apps/ --exclude 'migrations|settings.py'"
+TOOL_CMD[black]="black --${black_mode} apps/"
+TOOL_CMD[bandit]="bandit -r apps/ --exclude apps/ai_analysis/migrations,apps/properties/migrations,apps/search/migrations,apps/users/migrations"
+TOOL_CMD[radon-mi]="radon mi -s apps/"
+TOOL_CMD[radon-cc]="radon cc -a -s apps/"
+TOOL_CMD[radon-raw]="radon raw apps/"
 
-# Internal state
+DEFAULT_TOOLS=(pylint flake8 vulture black bandit radon-mi radon-cc radon-raw)
+
+# --------------------
+# Estado interno
+# --------------------
 declare -a TOOLS_TO_RUN=()
 declare -A TOOL_EXIT
 declare -A TOOL_REPORT_PATH
 declare -A TOOL_CMD_EXPANDED
 start_time="$(date --iso-8601=seconds 2>/dev/null || date -u +"%Y-%m-%dT%H:%M:%SZ")"
-
-# Fail-on default
 fail_on="any"
 
 # --------------------
-# Usage
+# Ajuda
 # --------------------
-usage() {
+uso() {
   cat <<EOF
-Usage: $(basename "$0") [options]
+Uso: $(basename "$0") [opções]
 
-Options:
-    -s, --sprint N           Sprint number (default: ${DEFAULT_SPRINT})
-    -t, --tools a,b,c        Comma-separated subset of tools to run (by key).
-                             Available keys: ${DEFAULT_TOOLS[*]}
-    --src PATH               Source dir (default: ${SRC_DIR})
-    --reports PATH           Reports root dir (default: ${REPORTS_DIR})
-    --scheme simple|nested   Output filename scheme (default: nested)
-    --fail-on LIST           'any'|'none'|comma-list of tools to cause non-zero exit.
-                             (default: ${fail_on})
-    --dry-run                Print commands instead of executing them.
-    --black-mode check|format Run black in check or format mode (default: check)
-    -h, --help               Show this help
-Examples:
-    $(basename "$0") --sprint 2
-    $(basename "$0") -s 3 -t pylint,flake8 --scheme simple
-    $(basename "$0") --dry-run --black-mode format
+Opções:
+    -s, --sprint N           Número do sprint (padrão: ${DEFAULT_SPRINT})
+    -t, --tools a,b,c        Ferramentas a executar separadas por vírgula.
+                             Disponíveis: ${DEFAULT_TOOLS[*]}
+    --src CAMINHO            Diretório fonte (padrão: ${SRC_DIR})
+    --reports CAMINHO        Diretório de relatórios (padrão: ${REPORTS_DIR})
+    --scheme simple|nested   Esquema de nomes dos relatórios (padrão: nested)
+    --fail-on LISTA          'any'|'none'|lista de ferramentas (padrão: ${fail_on})
+    --dry-run                Exibe os comandos sem executá-los
+    --black-mode check|format Modo do black: verificar ou formatar (padrão: check)
+    -h, --help               Exibe esta ajuda
+
+Exemplos:
+    $(basename "$0") --sprint 1
+    $(basename "$0") -t pylint,flake8,bandit
+    $(basename "$0") -t black --black-mode format
+    $(basename "$0") --dry-run
 EOF
 }
 
 # --------------------
-# Helpers
+# Funções auxiliares
 # --------------------
-check_command() {
+verificar_comando() {
   local cmd="$1"
   if ! command -v "$cmd" >/dev/null 2>&1; then
     return 1
@@ -146,37 +145,37 @@ check_command() {
   return 0
 }
 
-report_path_for() {
+caminho_relatorio() {
   local tool="$1"
   if [[ "$scheme" == "simple" ]]; then
-    echo "${REPORTS_DIR}/${tool}-report${sprint}.txt"
+    echo "${REPORTS_DIR}/${tool}-relatorio${sprint}.txt"
   else
     echo "${SPRINT_DIR}/${tool}-sprint${sprint}.txt"
   fi
 }
 
-run_tool() {
+executar_ferramenta() {
   local tool="$1"
   local raw_cmd="${TOOL_CMD[$tool]}"
   TOOL_CMD_EXPANDED[$tool]="$raw_cmd"
   local out_file
-  out_file="$(report_path_for "$tool")"
+  out_file="$(caminho_relatorio "$tool")"
   TOOL_REPORT_PATH[$tool]="$out_file"
 
   printf "${PURPLE}${BOLD}┌─────────────────────────────────────────────────────────────────────────────┐${NC}\n"
-  printf "${PURPLE}${BOLD}│${NC} ${WHITE}🔧 Running: %-20s${NC} ${PURPLE}${BOLD}│${NC}\n" "$tool"
+  printf "${PURPLE}${BOLD}│${NC} ${WHITE}🔧 Executando: %-20s${NC} ${PURPLE}${BOLD}│${NC}\n" "$tool"
   printf "${PURPLE}${BOLD}└─────────────────────────────────────────────────────────────────────────────┘${NC}\n"
-  log_info "Command: ${TOOL_CMD_EXPANDED[$tool]}"
+  log_info "Comando: ${TOOL_CMD_EXPANDED[$tool]}"
 
   local t_start t_end elapsed
   t_start="$(date +%s)"
 
   if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
-    printf "${YELLOW}[DRY-RUN]${NC} Command for ${BOLD}${tool}${NC}: ${TOOL_CMD_EXPANDED[$tool]}\n"
+    printf "${YELLOW}[DRY-RUN]${NC} Comando para ${BOLD}${tool}${NC}: ${TOOL_CMD_EXPANDED[$tool]}\n"
     TOOL_EXIT[$tool]=0
   else
     mkdir -p "$(dirname "$out_file")"
-    printf "${CYAN}⏳ Executing...${NC}\n"
+    printf "${CYAN}⏳ Executando...${NC}\n"
     if bash -c "${TOOL_CMD_EXPANDED[$tool]}" >"${out_file}" 2>&1; then
       TOOL_EXIT[$tool]=0
     else
@@ -188,28 +187,28 @@ run_tool() {
   elapsed=$((t_end - t_start))
 
   if [[ "${TOOL_EXIT[$tool]}" -eq 0 ]]; then
-    log_success "${tool} completed successfully in ${elapsed}s"
-    printf "${GREEN}📄 Report saved: ${out_file}${NC}\n"
+    log_sucesso "${tool} concluído com sucesso em ${elapsed}s"
+    printf "${GREEN}📄 Relatório salvo: ${out_file}${NC}\n"
   else
-    log_error "${tool} failed with exit code ${TOOL_EXIT[$tool]} after ${elapsed}s"
-    printf "${RED}📄 Error report saved: ${out_file}${NC}\n"
+    log_erro "${tool} falhou com código ${TOOL_EXIT[$tool]} após ${elapsed}s"
+    printf "${RED}📄 Relatório de erro salvo: ${out_file}${NC}\n"
   fi
   echo
 
   if [[ "${DRY_RUN:-0}" -eq 0 ]]; then
     {
-      printf "\n\n# --- metadata ---\n"
-      printf "tool: %s\n" "$tool"
-      printf "command: %s\n" "${TOOL_CMD_EXPANDED[$tool]}"
-      printf "exit_code: %s\n" "${TOOL_EXIT[$tool]}"
-      printf "runtime_seconds: %s\n" "${elapsed}"
-      printf "report_path: %s\n" "${out_file}"
+      printf "\n\n# --- metadados ---\n"
+      printf "ferramenta: %s\n" "$tool"
+      printf "comando: %s\n" "${TOOL_CMD_EXPANDED[$tool]}"
+      printf "codigo_saida: %s\n" "${TOOL_EXIT[$tool]}"
+      printf "tempo_execucao_segundos: %s\n" "${elapsed}"
+      printf "caminho_relatorio: %s\n" "${out_file}"
     } >>"${out_file}"
   fi
 }
 
 # --------------------
-# Arg parsing
+# Parsing de argumentos
 # --------------------
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -246,27 +245,25 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     -h|--help)
-      usage
+      uso
       exit 0
       ;;
     *)
-      echo "Unknown option: $1" >&2
-      usage
+      echo "Opção desconhecida: $1" >&2
+      uso
       exit 2
       ;;
   esac
 done
 
-# If tools not provided, use defaults
 if [[ ${#TOOLS_TO_RUN[@]} -eq 0 ]]; then
   TOOLS_TO_RUN=("${DEFAULT_TOOLS[@]}")
 fi
 
-# Recompute black cmd if black_mode set by args
-TOOL_CMD[black]="black --${black_mode} \"${SRC_DIR}\""
+TOOL_CMD[black]="black --${black_mode} apps/"
 
 # --------------------
-# Compose fail_on set (after tools list is known)
+# Conjunto fail-on
 # --------------------
 declare -A FAIL_ON_HASH
 if [[ "${fail_on}" == "any" ]]; then
@@ -279,7 +276,7 @@ else
 fi
 
 # --------------------
-# Determine sprint dir and filenames AFTER args parsing
+# Diretório do sprint
 # --------------------
 if [[ "$scheme" == "nested" ]]; then
   SPRINT_DIR="${REPORTS_DIR}/sprint${sprint}"
@@ -290,38 +287,36 @@ else
 fi
 
 SUMMARY_FILE="${SPRINT_DIR}/summary.txt"
-
-# Ensure reports dir exists (in case REPORTS_DIR was overridden)
 mkdir -p "${REPORTS_DIR}"
 
 # --------------------
-# Trap: write summary on exit
+# Trap: sumário ao sair
 # --------------------
-on_exit() {
+ao_sair() {
   local final_exit=$?
   end_time="$(date --iso-8601=seconds 2>/dev/null || date -u +"%Y-%m-%dT%H:%M:%SZ")"
   {
-    printf "start_time: %s\n" "${start_time}"
-    printf "end_time:   %s\n" "${end_time}"
-    printf "src_dir:    %s\n" "${SRC_DIR}"
-    printf "reports_dir:%s\n" "${REPORTS_DIR}"
-    printf "sprint:     %s\n" "${sprint}"
-    printf "scheme:     %s\n" "${scheme}"
-    printf "dry_run:    %s\n" "${DRY_RUN}"
-    printf "\n# tools executed:\n"
+    printf "inicio: %s\n" "${start_time}"
+    printf "fim:    %s\n" "${end_time}"
+    printf "src:    %s\n" "${SRC_DIR}"
+    printf "relatorios: %s\n" "${REPORTS_DIR}"
+    printf "sprint: %s\n" "${sprint}"
+    printf "esquema: %s\n" "${scheme}"
+    printf "dry_run: %s\n" "${DRY_RUN}"
+    printf "\n# ferramentas executadas:\n"
     for t in "${TOOLS_TO_RUN[@]}"; do
-      local code="${TOOL_EXIT[$t]:-not-run}"
+      local code="${TOOL_EXIT[$t]:-nao-executado}"
       local path="${TOOL_REPORT_PATH[$t]:-N/A}"
-      printf "%s: exit=%s path=%s cmd=%s\n" "$t" "$code" "$path" "${TOOL_CMD_EXPANDED[$t]:-N/A}"
+      printf "%s: saida=%s caminho=%s cmd=%s\n" "$t" "$code" "$path" "${TOOL_CMD_EXPANDED[$t]:-N/A}"
     done
-    printf "\n# final_exit: %s\n" "${final_exit}"
+    printf "\n# saida_final: %s\n" "${final_exit}"
   } >"${SUMMARY_FILE}.tmp" || true
 
   mv "${SUMMARY_FILE}.tmp" "${SUMMARY_FILE}" 2>/dev/null || true
 
   echo
   printf "${PURPLE}${BOLD}╔══════════════════════════════════════════════════════════════════════════════╗${NC}\n"
-  printf "${PURPLE}${BOLD}║                            📊 EXECUTION SUMMARY 📊                           ║${NC}\n"
+  printf "${PURPLE}${BOLD}║                            📊 RESUMO DA EXECUÇÃO 📊                          ║${NC}\n"
   printf "${PURPLE}${BOLD}╚══════════════════════════════════════════════════════════════════════════════╝${NC}\n"
 
   local success_count=0
@@ -331,19 +326,18 @@ on_exit() {
     local code="${TOOL_EXIT[$t]:-0}"
     if [[ "$code" -eq 0 ]]; then
       success_count=$((success_count + 1))
-      printf "${GREEN}✓${NC} %-15s ${GREEN}PASSED${NC}\n" "$t"
+      printf "${GREEN}✓${NC} %-15s ${GREEN}PASSOU${NC}\n" "$t"
     else
       fail_count=$((fail_count + 1))
-      printf "${RED}✗${NC} %-15s ${RED}FAILED (exit: $code)${NC}\n" "$t"
+      printf "${RED}✗${NC} %-15s ${RED}FALHOU (código: $code)${NC}\n" "$t"
     fi
   done
 
   echo
-  printf "${WHITE}📈 Results: ${GREEN}$success_count passed${NC}, ${RED}$fail_count failed${NC}\n"
-  printf "${WHITE}📄 Summary file: ${CYAN}${SUMMARY_FILE}${NC}\n"
+  printf "${WHITE}📈 Resultado: ${GREEN}$success_count passaram${NC}, ${RED}$fail_count falharam${NC}\n"
+  printf "${WHITE}📄 Arquivo de resumo: ${CYAN}${SUMMARY_FILE}${NC}\n"
   echo
 
-  # Determine final exit based on fail_on config and tool exits
   if [[ "${fail_on}" == "none" ]]; then
     exit 0
   fi
@@ -351,8 +345,8 @@ on_exit() {
     for t in "${TOOLS_TO_RUN[@]}"; do
       local code="${TOOL_EXIT[$t]:-0}"
       if [[ "$code" -ne 0 ]]; then
-        printf "${RED}${BOLD}💥 PIPELINE FAILED!${NC}\n"
-        log_error "Tool ${t} returned ${code} and --fail-on any is set"
+        printf "${RED}${BOLD}💥 PIPELINE FALHOU!${NC}\n"
+        log_erro "Ferramenta ${t} retornou ${code} e --fail-on any está ativo"
         exit 2
       fi
     done
@@ -361,58 +355,57 @@ on_exit() {
   for t in "${!FAIL_ON_HASH[@]}"; do
     local code="${TOOL_EXIT[$t]:-0}"
     if [[ "$code" -ne 0 ]]; then
-      printf "${RED}${BOLD}💥 PIPELINE FAILED!${NC}\n"
-      log_error "Tool ${t} returned ${code} and is in --fail-on list"
+      printf "${RED}${BOLD}💥 PIPELINE FALHOU!${NC}\n"
+      log_erro "Ferramenta ${t} retornou ${code} e está na lista --fail-on"
       exit 2
     fi
   done
   exit 0
 }
-trap on_exit EXIT
+trap ao_sair EXIT
 
 # --------------------
-# Start execution
+# Início da execução
 # --------------------
-print_header
+exibir_cabecalho
 
-# Validate presence of tools (report missing ones, continue or error as appropriate)
-missing_tools=()
+ferramentas_ausentes=()
 for t in "${TOOLS_TO_RUN[@]}"; do
   case "$t" in
     pylint) bin="pylint" ;;
     flake8) bin="flake8" ;;
     vulture) bin="vulture" ;;
     black) bin="black" ;;
+    bandit) bin="bandit" ;;
     radon-mi|radon-cc|radon-raw) bin="radon" ;;
     *) bin="$t" ;;
   esac
-  if ! check_command "$bin"; then
-    missing_tools+=("$bin")
-    log "WARNING: required command '$bin' (for tool '$t') not found in PATH"
+  if ! verificar_comando "$bin"; then
+    ferramentas_ausentes+=("$bin")
+    log "AVISO: comando '$bin' (para ferramenta '$t') não encontrado no PATH"
   fi
 done
 
-if [[ "${#missing_tools[@]}" -gt 0 ]]; then
+if [[ "${#ferramentas_ausentes[@]}" -gt 0 ]]; then
   echo
-  printf "${RED}${BOLD}❌ ERROR: Missing required tools!${NC}\n"
-  printf "${RED}🚫 Missing commands: ${missing_tools[*]}${NC}\n"
+  printf "${RED}${BOLD}❌ ERRO: Ferramentas necessárias não encontradas!${NC}\n"
+  printf "${RED}🚫 Ausentes: ${ferramentas_ausentes[*]}${NC}\n"
   echo
-  printf "${YELLOW}💡 Install them with:${NC}\n"
-  printf "${WHITE}   pip install pylint flake8 vulture black radon${NC}\n"
+  printf "${YELLOW}💡 Instale com:${NC}\n"
+  printf "${WHITE}   pip install pylint flake8 vulture black bandit radon${NC}\n"
   echo
   if [[ "${DRY_RUN}" -eq 1 ]]; then
-    log_warning "Continuing in dry-run despite missing tools"
+    log_aviso "Continuando em dry-run apesar das ferramentas ausentes"
   else
     exit 3
   fi
 fi
 
-# Run tools
 for t in "${TOOLS_TO_RUN[@]}"; do
   if [[ -z "${TOOL_CMD[$t]-}" ]]; then
-    log "Unknown tool key: $t — skipping"
+    log "Ferramenta desconhecida: $t — ignorando"
     TOOL_EXIT[$t]=127
     continue
   fi
-  run_tool "$t"
+  executar_ferramenta "$t"
 done

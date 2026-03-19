@@ -1,0 +1,7 @@
+pylint
+flake8
+vulture
+black
+bandit
+radon
+coverage
