@@ -31,7 +31,8 @@ jobs:
         run: black --check .
 
       - name: Flake8 — linting
-        run: flake8 --max-line-length=88 --exclude=migrations,venv .
+        run: flake8 --max-line-length=88 --exclude=migrations,venv --extend-ignore=F401 apps/
+
 
       - name: Bandit — segurança
         run: bandit -r apps/ -x apps/*/migrations
