@@ -34,7 +34,7 @@ na máquina do desenvolvedor antes de abrir um PR.
 
 ## Pré-requisitos
 ```bash
-pip install pylint flake8 black vulture bandit radon
+pip install -r tools/requirements-dev.txt
 chmod +x tools/run-quality.sh
 ```
 
