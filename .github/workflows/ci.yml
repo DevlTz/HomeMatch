@@ -35,7 +35,7 @@ jobs:
 
 
       - name: Bandit — segurança
-        run: bandit -r apps/ -x apps/*/migrations
+        run: bandit -r apps/ --exclude apps/ai_analysis/migrations,apps/properties/migrations,apps/search/migrations,apps/users/migrations
 
       - name: Pylint
         run: pylint apps/ --disable=C0114,C0115,C0116 --ignore=migrations
