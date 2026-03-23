@@ -28,7 +28,6 @@ CREATE TABLE IF NOT EXISTS condo (
     parks           BOOLEAN DEFAULT FALSE,
     party_spaces    BOOLEAN DEFAULT FALSE,
     concierge       BOOLEAN DEFAULT FALSE,  
-    laundry_room    BOOLEAN DEFAULT FALSE
 );
 
 
@@ -40,12 +39,12 @@ CREATE TABLE IF NOT EXISTS users (
     email       TEXT        UNIQUE NOT NULL,
     created_at  TIMESTAMP   DEFAULT NOW()
 );
- 
+
 
 CREATE TABLE IF NOT EXISTS properties (
     id                    BIGSERIAL PRIMARY KEY,
     owner_id              BIGINT REFERENCES users(id), 
-    rooms_id       BIGINT REFERENCES rooms(id),
+    rooms_id              BIGINT REFERENCES rooms(id),
     rooms_extras_id       BIGINT REFERENCES rooms_extras(id),
     condo_id              BIGINT REFERENCES condo(id),
     property_purpose      CHAR(1),
@@ -57,8 +56,16 @@ CREATE TABLE IF NOT EXISTS properties (
     address               TEXT,
     neighborhood          TEXT,
     city                  TEXT,
-    fotos_url             TEXT,
+    status                BOOLEAN DEFAULT TRUE,
+    has_mobilia           BOOLEAN DEFAULT FALSE,
     descricao             TEXT,
     embedding             vector(1536),
     created_at            TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTIS properties_photos(
+    id                  BIGSERIAL PRIMARY KEY,
+    property_id         BIGINT REFERENCES properties(id),
+    r2_key              TEXT NOT NULL,
+    order               INT
+) 
