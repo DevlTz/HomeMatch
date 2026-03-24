@@ -20,11 +20,11 @@ class User(AbstractUser):
     gender = models.CharField(max_length=50, null=True, blank=True)
     
     # Relação Many-to-Many (imoveis - pro properties)
-    favorites = models.ManyToManyField(
-        'properties.Property', 
-        related_name='favorited_by', 
-        blank=True
-    )
+  #  favorites = models.ManyToManyField(
+  #      'properties.Property', 
+ #       related_name='favorited_by', 
+   #     blank=True
+  #  )
 
     class Meta:
         db_table = "users" # table de luluisa
