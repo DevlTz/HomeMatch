@@ -7,13 +7,13 @@ from rest_framework.response import Response
 from .models import Properties
 from rest_framework.permissions import BasePermission
 from rest_framework.exceptions import PermissionDenied
-
-
+from .filters import PropertiesFilters
 
 # C -> Create
 # R -> Read
 # U -> Update
 # D -> Delete
+
 class IsPropertyOwner(BasePermission):
     def has_object_permission(self, obj, request, view):
         if obj.owner_id != request.user.id:
@@ -31,13 +31,14 @@ class CreatePropertyView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=201)
-        
+
         return Response(serializer.errors, status=400)
     
 class ListAllPropertiesView(generics.ListAPIView):
     queryset = Properties.objects.all().order_by("-created_at")
     serializer_class = PropertiesSerializer
-  
+    filterset_class = PropertiesFilters
+
 
 class GetPropertyView(generics.RetrieveAPIView):
     queryset = Properties.objects.all()
@@ -55,4 +56,5 @@ class UpdatePropertyView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated, IsPropertyOwner]
     lookup_field = "pk"
 
-
+class SearchPropertyAIView(APIView):
+    pass
