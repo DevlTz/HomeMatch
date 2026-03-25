@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS condo (
     court           BOOLEAN DEFAULT FALSE,
     parks           BOOLEAN DEFAULT FALSE,
     party_spaces    BOOLEAN DEFAULT FALSE,
-    concierge       BOOLEAN DEFAULT FALSE,  
+    concierge       BOOLEAN DEFAULT FALSE 
 );
 
 
@@ -63,9 +63,9 @@ CREATE TABLE IF NOT EXISTS properties (
     created_at            TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTIS properties_photos(
+CREATE TABLE IF NOT EXISTS properties_photos(
     id                  BIGSERIAL PRIMARY KEY,
     property_id         BIGINT REFERENCES properties(id),
     r2_key              TEXT NOT NULL,
-    order               INT
+    "order"             INT
 ) 
