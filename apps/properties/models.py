@@ -60,6 +60,8 @@ class Properties(models.Model):
     address = models.TextField(max_length=200, null=False)
     neighborhood = models.CharField(max_length=100, null=False)
     city = models.CharField(max_length=100, null=False)
+    has_mobilia = models.BooleanField(default=False)
+    status = models.BooleanField(default=True)
     description = models.TextField()
     embedding = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
