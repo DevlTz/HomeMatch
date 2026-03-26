@@ -35,17 +35,17 @@ class Properties(models.Model):
     PURPOSE_CHOICES = [("S", "Sale"), ("R", "Rent"), ("B", "Both")]
     TYPE_CHOICES = [("A", "Apartment"), ("H", "House")]
 
-    rooms_id = models.ForeignKey(
+    rooms = models.ForeignKey(
         Rooms,
         on_delete=models.PROTECT,
         related_name="properties"
     )
-    rooms_extras_id = models.ForeignKey(
+    rooms_extras = models.ForeignKey(
         RoomsExtras,
         on_delete=models.PROTECT,
         related_name="properties"
     )
-    condo_id = models.ForeignKey(
+    condo = models.ForeignKey(
         Condo,
         on_delete=models.PROTECT,
         related_name="properties",
