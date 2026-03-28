@@ -7,7 +7,7 @@ from apps.properties.serializers.photo_serializers import PropertiesUploadPhotos
 
 class UploadPhotoPropertyView(generics.CreateAPIView):
     queryset = Properties.objects.all()
-    permission_classes = [IsAuthenticated, IsPropertyOwner]
+    permission_classes = [IsAuthenticated(), IsPropertyOwner()]
     serializer_class = PropertiesUploadPhotosSerializer
     lookup_field = "pk"
 

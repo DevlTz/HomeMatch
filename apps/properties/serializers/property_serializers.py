@@ -118,3 +118,4 @@ class PropertiesWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Properties
         exclude = ["embedding"]
+        read_only_fields = ["id"]

@@ -68,7 +68,7 @@ class Properties(models.Model):
 
 
 class PropertiesPhotos(models.Model):
-    property_id = models.ForeignKey(
+    property = models.ForeignKey(
         Properties,
         on_delete=models.CASCADE,
         related_name="photos"

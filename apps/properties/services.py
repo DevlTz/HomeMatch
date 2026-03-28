@@ -1,5 +1,6 @@
 import boto3
 import uuid
+from botocore.config import Config
 from django.conf import settings
 
 s3_client = boto3.client(
@@ -7,6 +8,7 @@ s3_client = boto3.client(
     endpoint_url=f"https://{settings.R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
     aws_access_key_id=settings.R2_ACCESS_KEY_ID,
     aws_secret_access_key=settings.R2_SECRET_ACCESS_KEY,
+    config=Config(signature_version="s3v4")
 )
 
 def upload_to_cloud(image):
@@ -32,4 +34,4 @@ def generate_url(r2_key):
         "get_object",
         Params={"Bucket": settings.R2_BUCKET_NAME, "Key": r2_key},
         ExpiresIn=3600
-    )
+                )

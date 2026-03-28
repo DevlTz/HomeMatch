@@ -24,7 +24,7 @@ class PropertiesUploadPhotosSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PropertiesPhotos
-        exclude = ['r2_key']
+        fields = ['id', 'image', 'order']
 
 class PropertiesPhotosSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
