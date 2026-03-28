@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.permissions import BasePermission
 from rest_framework.exceptions import PermissionDenied
 from apps.properties.serializers.property_serializers import PropertiesWriteSerializer, PropertiesReadSerializer
@@ -18,40 +18,43 @@ class IsPropertyOwner(BasePermission):
         if hasattr(obj, "owner_id"):
             owner_id = obj.owner_id
         elif hasattr(obj, "property"):
-            owner_id = obj.proerty.owner_id
+            owner_id = obj.property.owner_id
         else:
-            owner_id = None
+            raise PermissionDenied("Cannot verify ownership for this object.")
         if owner_id != request.user.id:
             raise PermissionDenied("You do not have permission to do this action.")
         return True
     
-class CreatePropertyView(generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = PropertiesWriteSerializer
+class CreateListPropertyView(generics.ListCreateAPIView):
+    queryset = Properties.objects.all().order_by("created_at")
+    filterset_class = PropertiesFilters
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return PropertiesWriteSerializer
+        return PropertiesReadSerializer
+        
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated()]
+        return [AllowAny()]
 
     def perform_create(self, serializer):
         serializer.save(owner_id=self.request.user.id)
-    
-class ListAllPropertiesView(generics.ListAPIView):
-    queryset = Properties.objects.all().order_by("created_at")
-    serializer_class = PropertiesReadSerializer
-    filterset_class = PropertiesFilters
 
-class UpdatePropertyView(generics.UpdateAPIView):
-    queryset = Properties.objects.all().order_by("created_at")
-    serializer_class = PropertiesWriteSerializer
-    permission_classes = [IsAuthenticated, IsPropertyOwner]
-    lookup_field = "pk"
-
-class DeletePropertyView(generics.DestroyAPIView):
-    queryset = Properties.objects.all().order_by("created_at")
-    permission_classes = [IsAuthenticated, IsPropertyOwner]
-    lookup_field = "pk"
-
-class GetPropertyView(generics.RetrieveAPIView):
+class RUDPropertyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Properties.objects.all()
-    serializer_class = PropertiesReadSerializer
     lookup_field = "pk"
+
+    def get_serializer_class(self):
+        if self.request.method in ["PUT", "PATCH"]:
+            return PropertiesWriteSerializer
+        return PropertiesReadSerializer
+        
+    def get_permissions(self):
+        if self.request.method in ["PUT", "PATCH", "DELETE"]:
+            return [IsAuthenticated(), IsPropertyOwner()]
+        return [AllowAny()]
 
 class SearchPropertyAIView(APIView):
     pass
