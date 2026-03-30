@@ -1,13 +1,12 @@
-# apps/users/views.py
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 from .models import User
 from .serializers import UserSerializer
 
-class UserViewSet(ModelViewSet):
+class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
@@ -25,24 +24,31 @@ class UserViewSet(ModelViewSet):
         serializer = self.get_serializer(user)
         return Response(serializer.data)
 
-    # GET e POST em /api/users/favorites/
-    @action(detail=False, methods=['get', 'post'], url_path='favorites')
+    # GET, POST e DELETE em /api/users/favorites/
+    @action(detail=False, methods=['get', 'post', 'delete'], url_path='favorites')
     def favorites(self, request):
+        from apps.properties.serializers import PropertiesSerializer # Sei que soa estranho, mas esse import tem que tá aqui praa poder não ter import repetido 
+        from apps.properties.models import Properties 
+        
         user = request.user
         
-        if request.method == 'POST':
-            # Espera receber o ID do imóvel no body: {"property_id": 1}
-            property_id = request.data.get('property_id')
-            if not property_id:
-                return Response({"erro": "ID do imóvel não fornecido"}, status=status.HTTP_400_BAD_REQUEST)
-                
-            # Adicionar futuramente a lógica para buscar o imóvel e adicionar aos favoritos:
-            # property = Property.objects.get(id=property_id)
-            # user.favorites.add(property)
-            return Response({"mensagem": "Imóvel favoritado com sucesso!"})
+        # GET: Retorna os imóveis favoritados pelo usuário
+        if request.method == 'GET':
+            favorites = user.favorites.all()
+            serializer = PropertiesSerializer(favorites, many=True)
+            return Response(serializer.data)
 
-        # Para o GET
-        # favorites = user.favorites.all()
-        # serializer = PropertySerializer(favorites, many=True)
-        # return Response(serializer.data)
-        return Response({"mensagem": "Aqui retornaremos os imóveis favoritos (precisa do model Property finalizado)"})
+        property_id = request.data.get('property_id')
+        if not property_id:
+            return Response({"error": "property_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        property_obj = get_object_or_404(Properties, id=property_id)
+
+        if request.method == 'POST':
+            user.favorites.add(property_obj)
+            return Response({"message": "Property added to favorites"}, status=status.HTTP_200_OK)
+
+   
+        elif request.method == 'DELETE':
+            user.favorites.remove(property_obj)
+            return Response({"message": "Property removed from favorites"}, status=status.HTTP_200_OK)
