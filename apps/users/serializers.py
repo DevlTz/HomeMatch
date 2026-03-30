@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'name', 'email', 'age', 'gender', 'user_type', 'preferences']
-        read_only_fields = ['email', 'user_type'] # Evitar que o user mude o próprio email/tipo na route
+        read_only_fields = ['user_type'] 
 
     def update(self, instance, validated_data):
         preferences_data = validated_data.pop('preferences', None)
