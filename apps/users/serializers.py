@@ -29,3 +29,24 @@ class UserSerializer(serializers.ModelSerializer):
             )
             
         return instance
+    
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=8)
+
+    class Meta:
+        model = User
+        fields = ['id', 'name', 'email', 'password', 'user_type']
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            email=validated_data['email'],
+            name=validated_data['name'],
+            user_type=validated_data['user_type'],
+            password=validated_data['password']
+        )
+        return user
+    def validate_email(self, value):
+        email = value.lower()
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError("This email is currently in use.")
+        return email
