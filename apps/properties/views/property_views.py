@@ -14,16 +14,27 @@ from rest_framework.response import Response
 # U -> Update
 # D -> Delete
 
+class IsAdvertiser(BasePermission):
+    message = "You do not have permission to do this action. Please, change your account type to advertise!"
+    def has_permission(self, request, view, obj):
+        return (
+            request.user.is_authenticated and
+            request.user.user_type == "A"
+        )
+
 class IsPropertyOwner(BasePermission):
+    message = "You do not have permission to do this action."
+
     def has_object_permission(self, request, view, obj):
-        if hasattr(obj, "owner_id"):
-            owner_id = obj.owner_id
+        if hasattr(obj, "owner"):
+            owner = obj.owner
         elif hasattr(obj, "property"):
-            owner_id = obj.property.owner_id
+            owner = obj.property.owner
         else:
-            raise PermissionDenied("Cannot verify ownership for this object.")
-        if owner_id != request.user.id:
-            raise PermissionDenied("You do not have permission to do this action.")
+            return False
+    
+        if owner != request.user:
+            return False
         return True
     
 class CreateListPropertyView(generics.ListCreateAPIView):
@@ -37,8 +48,8 @@ class CreateListPropertyView(generics.ListCreateAPIView):
         
     def get_permissions(self):
         if self.request.method == "POST":
-            return [IsAuthenticated()]
-        return [AllowAny()]
+            return [IsAuthenticated, IsAdvertiser]
+        return [AllowAny]
 
     def perform_create(self, serializer):
         serializer.save(owner_id=self.request.user.id)
@@ -54,7 +65,7 @@ class RUDPropertyView(generics.RetrieveUpdateDestroyAPIView):
         
     def get_permissions(self):
         if self.request.method in ["PUT", "PATCH", "DELETE"]:
-            return [IsAuthenticated(), IsPropertyOwner()]
+            return [IsAuthenticated, IsPropertyOwner]
         return [AllowAny()]
     
     def destroy(self, request, *args, **kwargs):
