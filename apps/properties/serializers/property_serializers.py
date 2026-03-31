@@ -30,6 +30,11 @@ class RoomsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rooms
         exclude = ["id"]
+        extra_kwargs = {
+            'bedrooms': {'required': False},
+            'bathrooms': {'required': False},
+            'parking_spots': {'required': False},
+        }
 
 
 class PropertiesReadSerializer(serializers.ModelSerializer):
@@ -45,17 +50,20 @@ class PropertiesReadSerializer(serializers.ModelSerializer):
 
 class PropertiesWriteSerializer(serializers.ModelSerializer):
     rooms = RoomsSerializer()
-    condo = CondoSerializer()
+    condo = CondoSerializer(required=False, allow_null=True)
     rooms_extras = RoomsExtrasSerializer()
 
     def create(self, validated_data):
         rooms_data = validated_data.pop('rooms')
-        condo_data = validated_data.pop('condo')
+        condo_data = validated_data.pop('condo', None)
         rooms_extras_data = validated_data.pop('rooms_extras')
 
-        rooms = Rooms.objects.create(**rooms_data)
-        condo = Condo.objects.create(**condo_data)
-        rooms_extras = RoomsExtras.objects.create(**rooms_extras_data)
+        rooms, _ = Rooms.objects.get_or_create(**rooms_data)
+        condo = None
+        rooms_extras, _ = RoomsExtras.objects.get_or_create(**rooms_extras_data)
+
+        if condo_data:
+            condo, _ = Condo.objects.get_or_create(**condo_data)
 
         property = Properties.objects.create(
             rooms=rooms,
