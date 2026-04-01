@@ -1,7 +1,10 @@
+from unittest import result
 from rest_framework import serializers
 from apps.properties.models import Condo, Properties, Rooms, RoomsExtras
 from apps.properties.validators import validate_positive_number, validate_required_field
 from apps.properties.serializers.photo_serializers import PropertiesPhotosSerializer
+from django.db.models import Avg
+
 
 class RoomsExtrasSerializer(serializers.ModelSerializer):
     class Meta:
@@ -42,6 +45,11 @@ class PropertiesReadSerializer(serializers.ModelSerializer):
     condo = CondoSerializer()
     rooms_extras = RoomsExtrasSerializer()
     images = PropertiesPhotosSerializer(many=True, read_only=True, source="photos")
+    average_rating = serializers.SerializerMethodField()
+
+    def get_average_rating(self, obj):
+        result = obj.reviews.aggregate(Avg("rating"))
+        return result["rating__avg"]
 
     class Meta:
         model = Properties
