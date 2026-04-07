@@ -19,6 +19,16 @@ class ReviewsSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context.get("request")
         property_id = self.context.get("property_id")
-        if Reviews.objects.filter(user=request.user, property_id=property_id).exists():
+        
+        if not property_id and self.instance:
+            property_id = self.instance.property_id
+
+        if not property_id:
+            return data
+        # Se estamos editando, self.instance não será Nones
+        queryset = Reviews.objects.filter(user=request.user, property_id=property_id)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
             raise serializers.ValidationError("You have already reviewed this property.")
         return data

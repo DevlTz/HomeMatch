@@ -1,4 +1,3 @@
-from unittest import result
 from rest_framework import serializers
 from apps.properties.models import Condo, Properties, Rooms, RoomsExtras
 from apps.properties.validators import validate_positive_number, validate_required_field
@@ -48,6 +47,9 @@ class PropertiesReadSerializer(serializers.ModelSerializer):
     average_rating = serializers.SerializerMethodField()
 
     def get_average_rating(self, obj):
+        if hasattr(obj, "average_rating"):
+            return obj.average_rating
+        
         result = obj.reviews.aggregate(Avg("rating"))
         return result["rating__avg"]
 
@@ -83,16 +85,20 @@ class PropertiesWriteSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         rooms_data = validated_data.pop('rooms', {})
-        condo_data = validated_data.pop('condo', {})
+        condo_data = validated_data.pop('condo', None)
         rooms_extras_data = validated_data.pop('rooms_extras', {})
 
         for attr, value in rooms_data.items():
             setattr(instance.rooms, attr, value)
         instance.rooms.save()
-
-        for attr, value in condo_data.items():
-            setattr(instance.condo, attr, value)
-        instance.condo.save()
+        
+        if condo_data:
+            condo_obj, _ = Condo.objects.update_or_create(
+                id=instance.condo.id if instance.condo else None,
+                defaults=condo_data
+            )
+            instance.condo = condo_obj
+            instance.save()
 
         for attr, value in rooms_extras_data.items():
             setattr(instance.rooms_extras, attr, value)
@@ -103,7 +109,6 @@ class PropertiesWriteSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
-
 
     def validate(self, data):
         if data.get("type") == "A" and not data.get("floor_number"):
