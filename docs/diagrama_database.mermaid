@@ -1,0 +1,93 @@
+erDiagram
+    USERS {
+        bigserial id PK
+        text name
+        int age
+        varchar gender
+        text email UK "Login principal"
+        varchar user_type "A, S"
+        timestamp created_at
+    }
+
+    SEARCH_PREFERENCES {
+        bigserial id PK
+        bigint user_id FK
+        char property_type "H, A"
+        numeric min_price
+        numeric max_price
+        varchar city
+        varchar neighborhood
+    }
+
+    USER_FAVORITES {
+        bigint user_id FK
+        bigint property_id FK
+    }
+
+    PROPERTIES {
+        bigserial id PK
+        bigint owner_id FK
+        bigint rooms_id FK
+        bigint rooms_extras_id FK
+        bigint condo_id FK
+        char property_purpose "R, S, B"
+        char type "H, A"
+        float area
+        int floors
+        int floor_number
+        numeric price
+        text address
+        varchar neighborhood
+        varchar city
+        boolean status
+        boolean has_mobilia
+        text description
+        vector embedding "1536 dim"
+        timestamp created_at
+    }
+
+    ROOMS {
+        bigserial id PK
+        int bedrooms
+        int bathrooms
+        int parking_spots
+    }
+
+    ROOMS_EXTRAS {
+        bigserial id PK
+        boolean living_room
+        boolean garden
+        boolean kitchen
+        boolean laundry_room
+        boolean pool
+        boolean office
+    }
+
+    CONDO {
+        bigserial id PK
+        text name
+        text address
+        boolean gym
+        boolean pool
+        boolean court
+        boolean parks
+        boolean party_spaces
+        boolean concierge
+        boolean laundry_room
+    }
+
+    PROPERTIES_PHOTOS {
+        bigserial id PK
+        bigint property_id FK
+        text r2_key "Cloudflare R2"
+        int order
+    }
+
+    USERS ||--o{ PROPERTIES : "owns"
+    USERS ||--o| SEARCH_PREFERENCES : "has"
+    USERS }o--o{ USER_FAVORITES : "saves"
+    PROPERTIES }o--o{ USER_FAVORITES : "saved_by"
+    PROPERTIES ||--|| ROOMS : "has"
+    PROPERTIES ||--|| ROOMS_EXTRAS : "features"
+    PROPERTIES }o--|| CONDO : "belongs_to"
+    PROPERTIES ||--o{ PROPERTIES_PHOTOS : "has_images"
