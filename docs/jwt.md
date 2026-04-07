@@ -25,6 +25,7 @@ O modelo `User` herda de `AbstractUser`, mas utiliza um `UserManager` customizad
 | `POST` | `/api/users/register/` | Público | Registra um novo usuário na plataforma. |
 | `POST` | `/api/users/login/` | Público | Recebe as credenciais e retorna os tokens `access` e `refresh`. |
 | `POST` | `/api/users/token/refresh/` | Público | Gera um novo `access` token utilizando um `refresh` válido. |
+| `POST` | `/api/users/logout/` | Autenticado | Invalida o `refresh` token (blacklist), encerrando a sessão. |
 | `GET` | `/api/users/me/` | Autenticado | Retorna os dados do perfil do usuário logado. |
 
 ---
