@@ -103,6 +103,8 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"]
+
 }
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
@@ -112,3 +114,8 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+R2_ACCESS_KEY_ID = config("R2_ACCESS_KEY_ID")
+R2_ACCOUNT_ID = config("R2_ACCOUNT_ID")
+R2_SECRET_ACCESS_KEY = config("R2_SECRET_ACCESS_KEY")
+R2_BUCKET_NAME = config("R2_BUCKET_NAME")
