@@ -34,6 +34,14 @@ class Condo(models.Model):
 class Properties(models.Model):
     PURPOSE_CHOICES = [("S", "Sale"), ("R", "Rent"), ("B", "Both")]
     TYPE_CHOICES = [("A", "Apartment"), ("H", "House")]
+    
+    owner = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        related_name="properties",
+        null=True,
+        blank=True,
+    )
 
     rooms = models.ForeignKey(
         Rooms,

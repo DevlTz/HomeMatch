@@ -32,7 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
     
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
-
+    user_type = serializers.CharField(default="S")
     class Meta:
         model = User
         fields = ['id', 'name', 'email', 'password', 'user_type']
