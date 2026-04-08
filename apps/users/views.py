@@ -32,7 +32,7 @@ class UserViewSet(viewsets.GenericViewSet):
     # GET, POST e DELETE em /api/users/favorites/
     @action(detail=False, methods=['get', 'post', 'delete'], url_path='favorites')
     def favorites(self, request):
-        from apps.properties.serializers import PropertiesSerializer # Sei que soa estranho, mas esse import tem que tá aqui para poder não ter import repetido 
+        from apps.properties.serializers.property_serializers import PropertiesReadSerializer
         from apps.properties.models import Properties
         
         user = request.user
@@ -40,7 +40,7 @@ class UserViewSet(viewsets.GenericViewSet):
         # GET: Retorna os imóveis favoritados pelo usuário
         if request.method == 'GET':
             favorites = user.favorites.all()
-            serializer = PropertiesSerializer(favorites, many=True)
+            serializer = PropertiesReadSerializer(favorites, many=True)
             return Response(serializer.data)
 
         property_id = request.data.get('property_id')
