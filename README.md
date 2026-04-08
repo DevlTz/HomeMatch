@@ -6,7 +6,7 @@
 
 [![CI](https://img.shields.io/badge/ci-pending-lightgrey)](https://github.com/)
 [![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey)](https://github.com/)
-[![license](https://img.shields.io/badge/license-BSL--1.1-orange)](LICENSE)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 </div>
 
