@@ -44,11 +44,11 @@ class User(AbstractUser):
     gender = models.CharField(max_length=50, null=True, blank=True)
     
     
- #   favorites = models.ManyToManyField(
-  #      'properties.Properties', 
-   #     related_name='favorited_by', 
-  #      blank=True
-  #  )
+    favorites = models.ManyToManyField(
+        'properties.Properties', 
+        related_name='favorited_by', 
+        blank=True
+    )
 
     class Meta:
         db_table = "users"

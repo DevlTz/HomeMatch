@@ -75,3 +75,27 @@ class PropertiesPhotos(models.Model):
     )
     r2_key = models.TextField(null=False, blank=False)
     order = models.IntegerField()
+
+class Reviews(models.Model):
+    property = models.ForeignKey(
+        Properties,
+        on_delete=models.CASCADE,
+        related_name="reviews"
+    )
+    user = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        related_name="reviews"
+    )
+    rating = models.IntegerField()
+    comment = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "reviews"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["property", "user"],
+                name="unique_review_per_user_per_property"
+            )
+        ]
