@@ -45,7 +45,8 @@ class PropertiesReadSerializer(serializers.ModelSerializer):
     rooms_extras = RoomsExtrasSerializer()
     images = PropertiesPhotosSerializer(many=True, read_only=True, source="photos")
     average_rating = serializers.SerializerMethodField()
-
+    owner_name = serializers.CharField(source="owner.name", read_only=True)
+    
     def get_average_rating(self, obj):
         if hasattr(obj, "average_rating"):
             return obj.average_rating
@@ -98,7 +99,6 @@ class PropertiesWriteSerializer(serializers.ModelSerializer):
                 defaults=condo_data
             )
             instance.condo = condo_obj
-            instance.save()
 
         for attr, value in rooms_extras_data.items():
             setattr(instance.rooms_extras, attr, value)
@@ -139,4 +139,4 @@ class PropertiesWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Properties
         exclude = ["embedding"]
-        read_only_fields = ["id"]
+        read_only_fields = ["id", "owner"]

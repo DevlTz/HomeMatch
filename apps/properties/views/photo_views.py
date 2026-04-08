@@ -1,13 +1,13 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from apps.properties.views.property_views import IsPropertyOwner
+from apps.properties.permissions import IsPropertyOwner
 from apps.properties.models import Properties, PropertiesPhotos
 from apps.properties.serializers.photo_serializers import PropertiesUploadPhotosSerializer, PropertiesPhotosSerializer
 
 
 class UploadPhotoPropertyView(generics.CreateAPIView):
     queryset = Properties.objects.all()
-    permission_classes = [IsAuthenticated(), IsPropertyOwner()]
+    permission_classes = [IsAuthenticated, IsPropertyOwner]
     serializer_class = PropertiesUploadPhotosSerializer
     lookup_field = "pk"
 
@@ -26,5 +26,5 @@ class RUDPhotoPropertyView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_permissions(self):
         if self.request.method in ["PUT", "PATCH", "DELETE"]:
-            return [IsAuthenticated(), IsPropertyOwner()]
-        return [AllowAny()]
+            return [IsAuthenticated, IsPropertyOwner]
+        return [AllowAny]
