@@ -26,5 +26,5 @@ class RUDPhotoPropertyView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_permissions(self):
         if self.request.method in ["PUT", "PATCH", "DELETE"]:
-            return [IsAuthenticated, IsPropertyOwner]
+            return [IsAuthenticated(), IsPropertyOwner()]
         return [AllowAny]
