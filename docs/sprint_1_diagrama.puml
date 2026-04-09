@@ -1,0 +1,184 @@
+@startuml Class Diagram
+
+' Classes from users app
+class UserManager {
+  +create_user(email, password=None, **extra_fields): User
+  +create_superuser(email, password=None, **extra_fields): User
+}
+
+class User {
+  +name: CharField(max_length=120)
+  +email: EmailField(unique=True)
+  +user_type: CharField(max_length=1, choices=UserType)
+  +age: PositiveIntegerField(null=True, blank=True)
+  +gender: CharField(max_length=50, null=True, blank=True)
+  +favorites: ManyToManyField(Properties)
+  +__str__(): str
+}
+
+class SearchPreference {
+  +user: OneToOneField(User)
+  +property_type: CharField(max_length=1, choices=[('H', 'House'), ('A', 'Apartment')])
+  +min_price: DecimalField(max_digits=15, decimal_places=2)
+  +max_price: DecimalField(max_digits=15, decimal_places=2)
+  +city: CharField(max_length=100)
+  +neighborhood: CharField(max_length=100)
+}
+
+' Classes from properties app
+class Rooms {
+  +bedrooms: IntegerField()
+  +bathrooms: IntegerField()
+  +parking_spots: IntegerField()
+}
+
+class RoomsExtras {
+  +living_room: BooleanField(default=True)
+  +garden: BooleanField(default=False)
+  +kitchen: BooleanField(default=True)
+  +laundry_room: BooleanField(default=False)
+  +pool: BooleanField(default=False)
+  +office: BooleanField(default=False)
+}
+
+class Condo {
+  +name: CharField(max_length=100)
+  +address: TextField(max_length=200)
+  +gym: BooleanField(default=False)
+  +pool: BooleanField(default=False)
+  +court: BooleanField(default=False)
+  +parks: BooleanField(default=False)
+  +party_spaces: BooleanField(default=False)
+  +concierge: BooleanField(default=False)
+}
+
+class Properties {
+  +owner: ForeignKey(User, on_delete=CASCADE)
+  +rooms: ForeignKey(Rooms, on_delete=PROTECT)
+  +rooms_extras: ForeignKey(RoomsExtras, on_delete=PROTECT)
+  +condo: ForeignKey(Condo, on_delete=PROTECT, null=True)
+  +property_purpose: CharField(max_length=1, choices=PURPOSE_CHOICES)
+  +type: CharField(max_length=1, choices=TYPE_CHOICES)
+  +area: FloatField()
+  +floors: IntegerField()
+  +floor_number: IntegerField(null=True)
+  +price: DecimalField(max_digits=15, decimal_places=2)
+  +address: TextField(max_length=200)
+  +neighborhood: CharField(max_length=100)
+  +city: CharField(max_length=100)
+  +has_mobilia: BooleanField(default=False)
+  +status: BooleanField(default=True)
+  +description: TextField()
+  +embedding: TextField()
+  +created_at: DateTimeField(auto_now_add=True)
+}
+
+class PropertiesPhotos {
+  +property: ForeignKey(Properties, on_delete=CASCADE)
+  +r2_key: TextField()
+  +order: IntegerField()
+}
+
+class Reviews {
+  +property: ForeignKey(Properties, on_delete=CASCADE)
+  +user: ForeignKey(User, on_delete=CASCADE)
+  +rating: IntegerField()
+  +comment: TextField(null=True, blank=True)
+  +created_at: DateTimeField(auto_now_add=True)
+}
+
+' Classes from ai_analysis app
+class PhotoSubjectiveAttribute {
+  +property: ForeignKey(Properties, on_delete=CASCADE)
+  +photo: ForeignKey(PropertiesPhotos, on_delete=CASCADE)
+  +attribute_token: CharField(max_length=100)
+  +strength: FloatField()
+  +created_at: DateTimeField(auto_now_add=True)
+  +updated_at: DateTimeField(auto_now=True)
+}
+
+class PropertySubjectiveAttribute {
+  +property: ForeignKey(Properties, on_delete=CASCADE)
+  +attribute_token: CharField(max_length=100)
+  +strength_mean: FloatField()
+  +updated_at: DateTimeField(auto_now=True)
+}
+
+' Relationships
+UserManager .. User : manages >
+
+User -- SearchPreference : preferences 1..1
+
+User -- Properties : owner 1..*
+
+User *-- Properties : favorites *
+
+Properties --> Rooms : rooms
+
+Properties --> RoomsExtras : rooms_extras
+
+Properties --> Condo : condo 0..1
+
+Properties -- PropertiesPhotos : photos 1..*
+
+Properties -- Reviews : reviews 1..*
+
+Properties -- PhotoSubjectiveAttribute : photo_subjective_attributes 1..*
+
+Properties -- PropertySubjectiveAttribute : subjective_attributes 1..*
+
+PropertiesPhotos -- PhotoSubjectiveAttribute : subjective_attributes 1..*
+
+Reviews --> User : user
+
+' Notes for clarity
+note right of User
+  Usuário por padrão é ""Seeker"" (buscador)
+  Pode ser ""Advertiser"" (proprietário) para publicar imóveis
+  Pode favoritar múltiplas propriedades
+end note
+
+note right of SearchPreference
+  Cada usuário tem apenas UMA preferência de busca
+  Armazena filtros (tipo, preço, localização)
+  para personalizar recomendações
+end note
+
+note left of PropertiesPhotos
+  Fotos são ordenadas por ordem
+  Chave de armazenamento R2 (cloud storage)
+  Cada foto pode ter múltiplos atributos subjetivos
+end note
+
+note right of PhotoSubjectiveAttribute
+  IA extrai atributos de CADA FOTO
+  Ex: ""comfortable"", ""spacious"", ""bright""
+  Cada atributo tem força (0.0 a 1.0)
+  Criado e atualizado pelo motor de IA
+end note
+
+note right of PropertySubjectiveAttribute
+  AGREGAÇÃO dos atributos subjetivos
+  Calcula a MÉDIA de força entre todas as fotos
+  Facilita busca e recomendação a nível de propriedade
+  Atualizado quando novos atributos de foto são calculados
+end note
+
+note as N1
+  Fluxo de IA:
+  1. Foto carregada → PropertiesPhotos
+  2. IA analisa → PhotoSubjectiveAttribute (por foto)
+  3. Sistema agrega → PropertySubjectiveAttribute (média)
+end note
+
+note as N2
+  Estrutura de Dados Imóvel:
+  Properties: dados principais
+  + Rooms: configuração de cômodos
+  + RoomsExtras: amenidades (jardim, piscina, etc)
+  + Condo: informações do condomínio (se aplicável)
+  + PropertiesPhotos: galeria com análise de IA
+  + Reviews: avaliações de usuários
+end note
+
+@enduml
