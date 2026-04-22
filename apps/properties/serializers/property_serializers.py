@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.properties.models import Condo, Properties, Rooms, RoomsExtras
 from apps.properties.validators import validate_positive_number, validate_required_field
 from apps.properties.serializers.photo_serializers import PropertiesPhotosSerializer
-from django.db.models import Avg
+from apps.properties.use_cases import PropertyUseCase, ReviewUseCase
 
 
 class RoomsExtrasSerializer(serializers.ModelSerializer):
@@ -50,9 +50,7 @@ class PropertiesReadSerializer(serializers.ModelSerializer):
     def get_average_rating(self, obj):
         if hasattr(obj, "average_rating"):
             return obj.average_rating
-        
-        result = obj.reviews.aggregate(Avg("rating"))
-        return result["rating__avg"]
+        return ReviewUseCase.get_average_rating(obj)
 
     class Meta:
         model = Properties
@@ -65,50 +63,10 @@ class PropertiesWriteSerializer(serializers.ModelSerializer):
     rooms_extras = RoomsExtrasSerializer()
 
     def create(self, validated_data):
-        rooms_data = validated_data.pop('rooms')
-        condo_data = validated_data.pop('condo', None)
-        rooms_extras_data = validated_data.pop('rooms_extras')
-
-        rooms, _ = Rooms.objects.get_or_create(**rooms_data)
-        condo = None
-        rooms_extras, _ = RoomsExtras.objects.get_or_create(**rooms_extras_data)
-
-        if condo_data:
-            condo, _ = Condo.objects.get_or_create(**condo_data)
-
-        property = Properties.objects.create(
-            rooms=rooms,
-            rooms_extras=rooms_extras,
-            condo=condo,
-            **validated_data)
-
-        return property
+        return PropertyUseCase.create_property(validated_data)
 
     def update(self, instance, validated_data):
-        rooms_data = validated_data.pop('rooms', {})
-        condo_data = validated_data.pop('condo', None)
-        rooms_extras_data = validated_data.pop('rooms_extras', {})
-
-        for attr, value in rooms_data.items():
-            setattr(instance.rooms, attr, value)
-        instance.rooms.save()
-        
-        if condo_data:
-            condo_obj, _ = Condo.objects.update_or_create(
-                id=instance.condo.id if instance.condo else None,
-                defaults=condo_data
-            )
-            instance.condo = condo_obj
-
-        for attr, value in rooms_extras_data.items():
-            setattr(instance.rooms_extras, attr, value)
-        instance.rooms_extras.save()
-
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        return instance
+        return PropertyUseCase.update_property(instance, validated_data)
 
     def validate(self, data):
         if data.get("type") == "A" and not data.get("floor_number"):
