@@ -46,8 +46,20 @@ class PropertyRepository:
 class PhotoRepository:
     @staticmethod
     def create_photo(*, property_obj, image, order):
+        """Upload image to cloud then persist the record.
+
+        If the DB insert fails after a successful upload, the orphaned cloud
+        object is deleted so storage and database stay consistent.
+        """
         r2_key = upload_to_cloud(image)
-        return PropertiesPhotos.objects.create(property=property_obj, r2_key=r2_key, order=order)
+        try:
+            return PropertiesPhotos.objects.create(
+                property=property_obj, r2_key=r2_key, order=order
+            )
+        except Exception:
+            # Best-effort cleanup
+            delete_from_cloud(r2_key)
+            raise
 
     @staticmethod
     def replace_photo_image(instance, new_image):

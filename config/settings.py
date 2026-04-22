@@ -23,7 +23,6 @@ THIRD_PARTY_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
-
 ]
 
 LOCAL_APPS = [
@@ -48,7 +47,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "config.urls"
 
-
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -64,6 +62,7 @@ TEMPLATES = [
         },
     },
 ]
+
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
@@ -94,7 +93,7 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = "users.User"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -103,9 +102,9 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
-    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"]
-
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
 }
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -115,11 +114,17 @@ SIMPLE_JWT = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+# Cloudflare R2
+# Default to None so the app starts without R2 in local dev.
+# AiVisionClient / boto3 will raise at the point of first use if unset.
 R2_ACCESS_KEY_ID = config("R2_ACCESS_KEY_ID", default=None)
 R2_ACCOUNT_ID = config("R2_ACCOUNT_ID", default=None)
 R2_SECRET_ACCESS_KEY = config("R2_SECRET_ACCESS_KEY", default=None)
 R2_BUCKET_NAME = config("R2_BUCKET_NAME", default=None)
 
+# AI Vision API
+# Default to None; AiAnalysisService validates and raises ValueError on first
+# instantiation if these are missing, keeping the error surface narrow.
 AI_API_BASE_URL = config("AI_API_BASE_URL", default=None)
 AI_API_KEY = config("AI_API_KEY", default=None)
 AI_MODEL = config("AI_MODEL", default="gpt-4o-mini")
