@@ -23,6 +23,7 @@ THIRD_PARTY_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
+    "django_filters",
 ]
 
 LOCAL_APPS = [
@@ -121,6 +122,10 @@ R2_ACCESS_KEY_ID = config("R2_ACCESS_KEY_ID", default=None)
 R2_ACCOUNT_ID = config("R2_ACCOUNT_ID", default=None)
 R2_SECRET_ACCESS_KEY = config("R2_SECRET_ACCESS_KEY", default=None)
 R2_BUCKET_NAME = config("R2_BUCKET_NAME", default=None)
+# Storage backend
+# Set USE_LOCAL_STORAGE=True in .env to skip Cloudflare R2 and serve
+# files from MEDIA_ROOT instead. For development only.
+USE_LOCAL_STORAGE = config("USE_LOCAL_STORAGE", default=False, cast=bool)
 
 # AI Vision API
 # Default to None; AiAnalysisService validates and raises ValueError on first
@@ -128,3 +133,16 @@ R2_BUCKET_NAME = config("R2_BUCKET_NAME", default=None)
 AI_API_BASE_URL = config("AI_API_BASE_URL", default="https://generativelanguage.googleapis.com/v1beta/openai/")
 AI_API_KEY = config("AI_API_KEY", default=None)
 AI_MODEL = config("AI_MODEL", default="gemini-3-flash-preview")
+# Default analysis prompt
+# Centralised here so it can be overridden per-environment without touching code.
+# Accepts a custom prompt for future use cases.
+AI_ANALYSIS_DEFAULT_PROMPT = config(
+    "AI_ANALYSIS_DEFAULT_PROMPT",
+    default=(
+        "Analyze this property photo and return subjective atributes accordingly."
+        "Consider: brightness (if sun shines through the windows or the walls have a darker saturation are factors to take into consideration for 'brightness'), architectural style (strictly follow this list: Colonial (Portuguese), Baroque, Rococo (limited), Neoclassical, Eclectic, Art Nouveau (rare), Art Deco, Early Modern (proto-modernism), Modernist (Brazilian modernism), Tropical modernism, Brutalist, Postmodern, Contemporary, Vernacular (regional), Vernacular coastal (praiano), Neo-colonial, Neo-classical revival, Minimalist, High-rise modern (urban residential/commercial), Gated-community suburban (condomínio fechado style)),"
+        "furniture quality and style (by the amount of art pieces, the property receives an 'artsy' value, if the furniture is abundant, it receives a high 'furniture_amount' value, and if this furniture is modern or vintage it receives 'modern' and 'vintage' values), overall atmosphere (if it is comfortable, as in 'cozy'; if it has lots of plants and other natural elements, 'verdant';  if the space looks well utilized, 'spacious'; if the place looks dirty, 'clean'; if the place has 'warm' colors or 'cold' colors; if the place has lots of windows or other crevices, 'ventilation'), "
+        "and the apparent age of the property (if it looks recently renovated or well maintained, it receives a 'new' value, if it looks old or in need of repairs, it receives an 'old' value) as well as the age of the style of the property (if it looks like a style that was popular in the last 20 years, it receives a 'contemporary' value, if it looks like a style that was popular between 20 and 50 years ago, it receives a 'classic' value, and if it looks like a style that was popular more than 50 years ago, it receives a 'historic' value, and if it looks like something from the future or avant-garde, it receives a 'futuristic' value)."
+        "Return only the attributes in the requested structured format, without additional text."
+    ),
+)

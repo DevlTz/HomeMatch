@@ -9,3 +9,4 @@ Markdown==3.8
 pillow==11.2.1
 boto3
 openai
+google-generativeai

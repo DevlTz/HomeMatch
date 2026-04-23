@@ -7,6 +7,7 @@ from django.conf import settings
 
 from apps.ai_analysis.client import AiVisionClient, OpenAI
 from apps.ai_analysis.use_cases import AnalyzePhotoUseCase, AnalyzePropertyUseCase
+from apps.ai_analysis.exceptions import AiAnalysisError
 
 
 class AiAnalysisService:
@@ -40,7 +41,10 @@ class AiAnalysisService:
         )
 
     def analyze_photo(self, photo, prompt):
-        return self.analyze_photo_use_case.execute(photo, prompt)
+        try:
+            return self.analyze_photo_use_case.execute(photo, prompt)
+        except Exception as exc:
+            raise AiAnalysisError(f"Photo {photo.pk}: {exc}") from exc
 
     def analyze_property(self, property_obj, prompt):
         return self.analyze_property_use_case.execute(property_obj, prompt)
