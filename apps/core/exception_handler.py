@@ -17,10 +17,8 @@ from .exceptions import (
 )
 
 logger = logging.getLogger(__name__)
-
-
 def homematch_exception_handler(exc, context):
-    # Deixa o DRF tratar o que ele já conhece (JWT, ValidationError, etc.)
+    # Let DRF handle exceptions it already knows (JWT, ValidationError, etc.)
     response = exception_handler(exc, context)
     if response is not None:
         return response
@@ -28,7 +26,7 @@ def homematch_exception_handler(exc, context):
     if isinstance(exc, ResourceNotFound):
         return Response({"error": str(exc)}, status=status.HTTP_404_NOT_FOUND)
 
-    if isinstance(exc, (AuthenticationError,)):
+    if isinstance(exc, AuthenticationError):
         return Response({"error": str(exc)}, status=status.HTTP_401_UNAUTHORIZED)
 
     if isinstance(exc, AuthorizationError):
@@ -44,36 +42,36 @@ def homematch_exception_handler(exc, context):
         return Response({"error": str(exc)}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
     if isinstance(exc, ExternalServiceTimeout):
-        logger.warning("Timeout em serviço externo: %s", exc)
+        logger.warning("External service timeout: %s", exc)
         return Response(
-            {"error": "Serviço externo demorou demais. Tente novamente."},
+            {"error": "External service took too long. Please try again."},
             status=status.HTTP_504_GATEWAY_TIMEOUT,
         )
 
     if isinstance(exc, ExternalServiceError):
-        logger.error("Erro de serviço externo: %s", exc)
+        logger.error("External service error: %s", exc)
         return Response(
-            {"error": "Serviço externo indisponível. Tente novamente."},
+            {"error": "External service unavailable. Please try again."},
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
 
     if isinstance(exc, ConfigurationError):
-        logger.critical("Erro de configuração: %s", exc)
+        logger.critical("Configuration error: %s", exc)
         return Response(
-            {"error": "Erro de configuração do servidor."},
+            {"error": "Server configuration error."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
     if isinstance(exc, DatabaseError):
-        logger.error("Erro de banco de dados: %s", exc)
+        logger.error("Database error: %s", exc)
         return Response(
-            {"error": "Erro interno. Tente novamente mais tarde."},
+            {"error": "Internal error. Please try again later."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
-    # Qualquer coisa não tratada — loga e retorna 500 limpo
-    logger.exception("Erro não tratado: %s", exc)
+    # Any unhandled exception — log it and return a clean 500
+    logger.exception("Unhandled error: %s", exc)
     return Response(
-        {"error": "Erro interno. Tente novamente mais tarde."},
+        {"error": "Internal error. Please try again later."},
         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
     )
