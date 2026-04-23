@@ -119,3 +119,13 @@ R2_ACCESS_KEY_ID = config("R2_ACCESS_KEY_ID")
 R2_ACCOUNT_ID = config("R2_ACCOUNT_ID")
 R2_SECRET_ACCESS_KEY = config("R2_SECRET_ACCESS_KEY")
 R2_BUCKET_NAME = config("R2_BUCKET_NAME")
+
+# Celery
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://redis:6379/0")
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://redis:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+
+# O redis vai enfileirar as tarefas e atribuir aos workers do celery.
+# O celery vai ter seus workers que vão ter suas funções já pré definidas nos arquivos tasks.py
+# Quando uma tarefa é terminada, o redis vai armazenar seu resultado
