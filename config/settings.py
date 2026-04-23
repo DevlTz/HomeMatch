@@ -125,6 +125,6 @@ R2_BUCKET_NAME = config("R2_BUCKET_NAME", default=None)
 # AI Vision API
 # Default to None; AiAnalysisService validates and raises ValueError on first
 # instantiation if these are missing, keeping the error surface narrow.
-AI_API_BASE_URL = config("AI_API_BASE_URL", default=None)
+AI_API_BASE_URL = config("AI_API_BASE_URL", default="https://generativelanguage.googleapis.com/v1beta/openai/")
 AI_API_KEY = config("AI_API_KEY", default=None)
-AI_MODEL = config("AI_MODEL", default="gpt-4o-mini")
+AI_MODEL = config("AI_MODEL", default="gemini-3-flash-preview")
