@@ -70,6 +70,8 @@ class Properties(models.Model):
     city = models.CharField(max_length=100, null=False)
     has_mobilia = models.BooleanField(default=False)
     status = models.BooleanField(default=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     description = models.TextField()
     embedding = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -107,3 +109,16 @@ class Reviews(models.Model):
                 name="unique_review_per_user_per_property"
             )
         ]
+
+class NearbyPlaces(models.Model):
+    CATEGORY_CHOICES = [("R", "Restaurant"), ("G", "Gym"), ("S", "School"), ("H", "Hospital"), ("SM", "Supermarket"), ("P", "Park")]
+    property = models.ForeignKey(
+        Properties,
+        on_delete=models.CASCADE,
+        related_name="nearby_places"
+    )
+    name = models.TextField(null=False)
+    category = models.CharField(max_length=2, choices=CATEGORY_CHOICES)
+    distance_meters = models.FloatField()
+    rating = models.FloatField(null=True, blank=True)
+    fetched_at = models.DateTimeField(auto_now_add=True)
