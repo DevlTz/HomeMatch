@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.properties.models import Condo, Properties, Rooms, RoomsExtras
+from apps.properties.models import Condo, Properties, Rooms, RoomsExtras, NearbyPlaces
 from apps.properties.validators import validate_positive_number, validate_required_field
 from apps.properties.serializers.photo_serializers import PropertiesPhotosSerializer
 from django.db.models import Avg
@@ -38,12 +38,17 @@ class RoomsSerializer(serializers.ModelSerializer):
             'parking_spots': {'required': False},
         }
 
+class NearbyPlacesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NearbyPlaces
+        fields = ["name", "category", "distance_meters", "rating"]
 
 class PropertiesReadSerializer(serializers.ModelSerializer):
     rooms = RoomsSerializer()
     condo = CondoSerializer()
     rooms_extras = RoomsExtrasSerializer()
     images = PropertiesPhotosSerializer(many=True, read_only=True, source="photos")
+    nearby_places = NearbyPlacesSerializer(many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
     owner_name = serializers.CharField(source="owner.name", read_only=True)
     
