@@ -129,3 +129,5 @@ CELERY_TASK_SERIALIZER = "json"
 # O redis vai enfileirar as tarefas e atribuir aos workers do celery.
 # O celery vai ter seus workers que vão ter suas funções já pré definidas nos arquivos tasks.py
 # Quando uma tarefa é terminada, o redis vai armazenar seu resultado
+
+GOOGLE_PLACES_API_KEY = config("GOOGLE_PLACES_API_KEY")
