@@ -1,6 +1,7 @@
 from apps.properties.validators import validate_rating, validate_comment_length
 from rest_framework import serializers
 from apps.properties.models import Reviews
+from apps.properties.use_cases import ReviewUseCase
 
 class ReviewsSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source="user.name", read_only=True)
@@ -26,9 +27,11 @@ class ReviewsSerializer(serializers.ModelSerializer):
         if not property_id:
             return data
         # Se estamos editando, self.instance não será Nones
-        queryset = Reviews.objects.filter(user=request.user, property_id=property_id)
-        if self.instance:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        if queryset.exists():
+        is_valid = ReviewUseCase.validate_unique_review(
+            user=request.user,
+            property_id=property_id,
+            instance=self.instance,
+        )
+        if not is_valid:
             raise serializers.ValidationError("You have already reviewed this property.")
         return data

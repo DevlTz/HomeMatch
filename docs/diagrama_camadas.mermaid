@@ -1,0 +1,86 @@
+flowchart TB
+    subgraph API["API — Views & Serializers"]
+        direction LR
+        subgraph VIEWS["Views"]
+            V1["CreateListPropertyView"]
+            V2["RUDPropertyView"]
+            V3["CreateListReviewPropertyView"]
+            V4["RUDReviewPropertyView"]
+            V5["UploadPhotoPropertyView"]
+            V6["RUDPhotoPropertyView"]
+            V7["AnalyzePropertyView"]
+            V8["RegisterUserView"]
+            V9["UserViewSet"]
+        end
+        subgraph SERIAL["Serializers"]
+            S1["PropertiesReadSerializer"]
+            S2["PropertiesWriteSerializer"]
+            S3["ReviewsSerializer"]
+            S4["PropertiesPhotosSerializer"]
+            S5["PropertiesUploadPhotosSerializer"]
+            S6["UserSerializer"]
+            S7["RegisterSerializer"]
+            S8["AnalyzePropertyRequestSerializer"]
+        end
+        subgraph PERMS["Permissions"]
+            P1["IsAdvertiser"]
+            P2["IsPropertyOwner"]
+            P3["IsReviewOwner"]
+        end
+    end
+
+    subgraph SVC["SERVICE — Use Cases & Services"]
+        direction LR
+        subgraph UC["Use Cases"]
+            UC1["PropertyUseCase"]
+            UC2["PhotoUseCase"]
+            UC3["ReviewUseCase"]
+            UC4["AnalyzePhotoUseCase"]
+            UC5["AnalyzePropertyUseCase"]
+        end
+        subgraph SVCS["Services & Client"]
+            SV1["AiAnalysisService"]
+            SV2["UserService"]
+            SV3["FavoriteService"]
+            CL1["AiVisionClient"]
+        end
+    end
+
+    subgraph DATA["DATA — Repositories & Models"]
+        direction LR
+        subgraph REPOS["Repositories"]
+            R1["PropertyRepository"]
+            R2["PhotoRepository"]
+            R3["ReviewRepository"]
+            R4["SubjectiveAttributeRepository"]
+            R5["UserRepository"]
+            R6["SearchPreferenceRepository"]
+            R7["FavoriteRepository"]
+        end
+        subgraph MODELS["Models"]
+            M1["Properties"]
+            M2["Rooms"]
+            M3["RoomsExtras"]
+            M4["Condo"]
+            M5["PropertiesPhotos"]
+            M6["Reviews"]
+            M7["User"]
+            M8["SearchPreference"]
+            M9["PhotoSubjectiveAttribute"]
+            M10["PropertySubjectiveAttribute"]
+        end
+    end
+
+    API -->|"delegates business logic"| SVC
+    SVC -->|"persists and queries"| DATA
+
+    style API fill:#dbeafe,stroke:#2563eb,color:#1e3a5f
+    style SVC fill:#dcfce7,stroke:#16a34a,color:#14532d
+    style DATA fill:#fef9c3,stroke:#ca8a04,color:#713f12
+    style VIEWS fill:#bfdbfe,stroke:#3b82f6,color:#1e3a5f
+    style SERIAL fill:#bfdbfe,stroke:#3b82f6,color:#1e3a5f
+    style PERMS fill:#bfdbfe,stroke:#3b82f6,color:#1e3a5f
+    style UC fill:#bbf7d0,stroke:#22c55e,color:#14532d
+    style SVCS fill:#bbf7d0,stroke:#22c55e,color:#14532d
+    style REPOS fill:#fef08a,stroke:#eab308,color:#713f12
+    style MODELS fill:#fef08a,stroke:#eab308,color:#713f12

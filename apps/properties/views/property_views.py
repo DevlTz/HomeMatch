@@ -2,12 +2,14 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny, BasePermission
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from apps.properties.models import Properties, Reviews
 from apps.properties.filters import PropertiesFilters
 from apps.properties.serializers.property_serializers import PropertiesWriteSerializer, PropertiesReadSerializer
 from apps.properties.serializers.reviews_serializers import ReviewsSerializer
 from apps.properties.permissions import IsAdvertiser, IsReviewOwner, IsPropertyOwner
+from apps.properties.repositories import PropertyRepository
+from apps.properties.use_cases import PropertyUseCase, ReviewUseCase
 
 # C -> Create
 # R -> Read
@@ -23,9 +25,7 @@ class CreateListReviewPropertyView(generics.ListCreateAPIView):
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        return Reviews.objects.filter(
-            property_id=self.kwargs["pk"]
-        ).order_by("-created_at")
+        return ReviewUseCase.get_reviews_for_property(self.kwargs["pk"])
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -47,8 +47,10 @@ class RUDReviewPropertyView(generics.RetrieveUpdateDestroyAPIView):
         return [AllowAny()]
 
 class CreateListPropertyView(generics.ListCreateAPIView):
-    queryset = Properties.objects.all().order_by("created_at")
     filterset_class = PropertiesFilters
+
+    def get_queryset(self):
+        return PropertyRepository.list_properties_with_order()
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -79,7 +81,7 @@ class RUDPropertyView(generics.RetrieveUpdateDestroyAPIView):
     
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        self.perform_destroy(instance)
+        PropertyUseCase.delete_property(instance)
         return Response({
             "message": "Delete successful!"
         }, status=status.HTTP_204_NO_CONTENT)
