@@ -8,6 +8,8 @@ from apps.properties.filters import PropertiesFilters
 from apps.properties.serializers.property_serializers import PropertiesWriteSerializer, PropertiesReadSerializer
 from apps.properties.serializers.reviews_serializers import ReviewsSerializer
 from apps.properties.permissions import IsAdvertiser, IsReviewOwner, IsPropertyOwner
+from apps.properties.tasks import search_nearby_places
+from apps.properties.services import NomatimService
 from apps.properties.pagination import HomeMatchPagination
 from apps.properties.repositories import PropertyRepository
 from apps.properties.use_cases import PropertyUseCase, ReviewUseCase
@@ -66,7 +68,10 @@ class CreateListPropertyView(generics.ListCreateAPIView):
         return [AllowAny()]
 
     def perform_create(self, serializer):
-        serializer.save(owner_id=self.request.user.id)
+        property_obj = serializer.save(owner_id=self.request.user.id)
+        NomatimService.geocode(property_obj)
+        if property_obj.latitude and property_obj.longitude:
+            search_nearby_places.delay(property_obj.id)   
 
 class RUDPropertyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Properties.objects.all()
