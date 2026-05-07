@@ -104,6 +104,9 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_PAGINATION_CLASS": "apps.properties.pagination.HomeMatchPagination", 
+    "PAGE_SIZE": 20
+
 }
 
 SIMPLE_JWT = {

@@ -8,6 +8,7 @@ from apps.properties.filters import PropertiesFilters
 from apps.properties.serializers.property_serializers import PropertiesWriteSerializer, PropertiesReadSerializer
 from apps.properties.serializers.reviews_serializers import ReviewsSerializer
 from apps.properties.permissions import IsAdvertiser, IsReviewOwner, IsPropertyOwner
+from apps.properties.pagination import HomeMatchPagination
 from apps.properties.repositories import PropertyRepository
 from apps.properties.use_cases import PropertyUseCase, ReviewUseCase
 
@@ -18,6 +19,7 @@ from apps.properties.use_cases import PropertyUseCase, ReviewUseCase
 
 class CreateListReviewPropertyView(generics.ListCreateAPIView):
     serializer_class = ReviewsSerializer
+    pagination_class = HomeMatchPagination
 
     def get_permissions(self):
         if self.request.method == "GET":
@@ -48,6 +50,7 @@ class RUDReviewPropertyView(generics.RetrieveUpdateDestroyAPIView):
 
 class CreateListPropertyView(generics.ListCreateAPIView):
     filterset_class = PropertiesFilters
+    pagination_class = HomeMatchPagination
 
     def get_queryset(self):
         return PropertyRepository.list_properties_with_order()
