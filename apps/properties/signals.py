@@ -28,8 +28,8 @@ def delete_fatherless_room(sender, instance, **kwargs):
 
 @receiver(post_save, sender=PropertiesPhotos)
 def trigger_ai_analysis_on_photo_upload(
-    sender, instance, created, **kwargs
-):  # noqa: ARG001
+    sender, instance, created, **kwargs # these parameters are required by the post_save signal, even if we don't use all of them
+):  
     """Run LLM Vision analysis automatically whenever a new photo is saved.
 
     - Prompt is read from settings so it can be overridden via .env.

@@ -4,7 +4,7 @@ HTTP views for the AI analysis app.
 
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -25,7 +25,7 @@ class AnalyzePropertyView(APIView):
     URL pattern should include the property primary key as `pk`.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     def post(self, request, pk: int):  
         serializer = AnalyzePropertyRequestSerializer(data=request.data)
