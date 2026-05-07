@@ -115,6 +115,15 @@ SIMPLE_JWT = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+# Celery
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://redis:6379/0")
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://redis:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+
+# O redis vai enfileirar as tarefas e atribuir aos workers do celery.
+# O celery vai ter seus workers que vão ter suas funções já pré definidas nos arquivos tasks.py
+# Quando uma tarefa é terminada, o redis vai armazenar seu resultado
 # Cloudflare R2
 # Default to None so the app starts without R2 in local dev.
 # AiVisionClient / boto3 will raise at the point of first use if unset.
