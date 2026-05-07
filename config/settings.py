@@ -118,17 +118,6 @@ SIMPLE_JWT = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Celery
-CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://redis:6379/0")
-CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://redis:6379/0")
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-
-# O redis vai enfileirar as tarefas e atribuir aos workers do celery.
-# O celery vai ter seus workers que vão ter suas funções já pré definidas nos arquivos tasks.py
-# Quando uma tarefa é terminada, o redis vai armazenar seu resultado
-
-GOOGLE_PLACES_API_KEY = config("GOOGLE_PLACES_API_KEY")
 # Cloudflare R2
 # Default to None so the app starts without R2 in local dev.
 # AiVisionClient / boto3 will raise at the point of first use if unset.
@@ -153,10 +142,22 @@ AI_MODEL = config("AI_MODEL", default="gemini-3-flash-preview")
 AI_ANALYSIS_DEFAULT_PROMPT = config(
     "AI_ANALYSIS_DEFAULT_PROMPT",
     default=(
-        "Analyze this property photo and return subjective atributes accordingly."
-        "Consider: brightness (if sun shines through the windows or the walls have a darker saturation are factors to take into consideration for 'brightness'), architectural style (strictly follow this list: Colonial (Portuguese), Baroque, Rococo (limited), Neoclassical, Eclectic, Art Nouveau (rare), Art Deco, Early Modern (proto-modernism), Modernist (Brazilian modernism), Tropical modernism, Brutalist, Postmodern, Contemporary, Vernacular (regional), Vernacular coastal (praiano), Neo-colonial, Neo-classical revival, Minimalist, High-rise modern (urban residential/commercial), Gated-community suburban (condomínio fechado style)),"
-        "furniture quality and style (by the amount of art pieces, the property receives an 'artsy' value, if the furniture is abundant, it receives a high 'furniture_amount' value, and if this furniture is modern or vintage it receives 'modern' and 'vintage' values), overall atmosphere (if it is comfortable, as in 'cozy'; if it has lots of plants and other natural elements, 'verdant';  if the space looks well utilized, 'spacious'; if the place looks dirty, 'clean'; if the place has 'warm' colors or 'cold' colors; if the place has lots of windows or other crevices, 'ventilation'), "
-        "and the apparent age of the property (if it looks recently renovated or well maintained, it receives a 'new' value, if it looks old or in need of repairs, it receives an 'old' value) as well as the age of the style of the property (if it looks like a style that was popular in the last 20 years, it receives a 'contemporary' value, if it looks like a style that was popular between 20 and 50 years ago, it receives a 'classic' value, and if it looks like a style that was popular more than 50 years ago, it receives a 'historic' value, and if it looks like something from the future or avant-garde, it receives a 'futuristic' value)."
-        "Return only the attributes in the requested structured format, without additional text."
+        "You are a real‑estate photo analyst. "
+        "Analyze the photo and return a JSON object that strictly follows the provided schema. "
+        "All numeric values must be between 0.0 and 1.0. "
+        "For architecture, list the 1–3 most prominent styles (omit those with confidence < 0.15). "
+        "Do not include markdown fences or extra commentary."
     ),
 )
+
+# Celery
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://redis:6379/0")
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://redis:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+
+# O redis vai enfileirar as tarefas e atribuir aos workers do celery.
+# O celery vai ter seus workers que vão ter suas funções já pré definidas nos arquivos tasks.py
+# Quando uma tarefa é terminada, o redis vai armazenar seu resultado
+
+GOOGLE_PLACES_API_KEY = config("GOOGLE_PLACES_API_KEY")
