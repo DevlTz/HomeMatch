@@ -34,7 +34,7 @@ class Condo(models.Model):
 class Properties(models.Model):
     PURPOSE_CHOICES = [("S", "Sale"), ("R", "Rent"), ("B", "Both")]
     TYPE_CHOICES = [("A", "Apartment"), ("H", "House")]
-    
+
     owner = models.ForeignKey(
         "users.User",
         on_delete=models.CASCADE,
@@ -44,21 +44,22 @@ class Properties(models.Model):
     )
 
     rooms = models.ForeignKey(
-        Rooms,
-        on_delete=models.PROTECT,
-        related_name="properties"
+    Rooms,
+    on_delete=models.PROTECT,
+    related_name="properties",
     )
     rooms_extras = models.ForeignKey(
         RoomsExtras,
         on_delete=models.PROTECT,
-        related_name="properties"
+        related_name="properties",
     )
     condo = models.ForeignKey(
         Condo,
         on_delete=models.PROTECT,
         related_name="properties",
         null=True,
-        blank=True)
+        blank=True
+    )
     property_purpose = models.CharField(max_length=1, choices=PURPOSE_CHOICES)
     type = models.CharField(max_length=1, choices=TYPE_CHOICES)
     area = models.FloatField(null=False)

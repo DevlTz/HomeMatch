@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from apps.properties.models import PropertiesPhotos
 from apps.properties.services import CloudService
+from apps.properties.services import generate_url
+from apps.properties.use_cases import PhotoUseCase
 
 class PropertiesUploadPhotosSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(write_only=True)
@@ -20,6 +22,11 @@ class PropertiesUploadPhotosSerializer(serializers.ModelSerializer):
             instance.save()
 
         return instance
+        property_obj = validated_data["property"]
+        return PhotoUseCase.create_photo(property_obj=property_obj, validated_data=validated_data)
+
+    def update(self, instance, validated_data):
+        return PhotoUseCase.update_photo(instance, validated_data)
 
 
     class Meta:
