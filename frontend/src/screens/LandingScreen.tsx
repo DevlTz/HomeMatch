@@ -1,215 +1,191 @@
-import React from "react";
-import { colors, font } from "../style/theme";
-import { IconHome, IconMenu, IconSparkle, IconArrowRight } from "../components/Icons";
+import "./LandingScreen.css";
+
+import heroBuilding from "../assets/predio.png";
+import propertyPhoto from "../assets/p.jpg";
 
 interface LandingScreenProps {
   onEnter: () => void;
 }
 
+const benefits = [
+  {
+    icon: "✦",
+    title: "Busca inteligente",
+    text: "Nossa IA entende suas preferencias e encontra imoveis ideais para voce.",
+  },
+  {
+    icon: "⌖",
+    title: "Imoveis verificados",
+    text: "Opcoes analisadas com fotos, localizacao e detalhes completos.",
+  },
+  {
+    icon: "♡",
+    title: "Experiencia personalizada",
+    text: "Recomendacoes sob medida com base no seu perfil e estilo de vida.",
+  },
+  {
+    icon: "◇",
+    title: "Transparencia total",
+    text: "Informacoes claras para comparar e decidir com mais seguranca.",
+  },
+];
+
+const properties = [
+  {
+    type: "Apartamento",
+    title: "Apartamento moderno em Ponta Negra",
+    location: "Ponta Negra, Natal - RN",
+    stats: "2 quartos • 2 banheiros • 75 m²",
+    price: "R$ 450.000",
+  },
+  {
+    type: "Casa",
+    title: "Casa com jardim e piscina no Capim Macio",
+    location: "Capim Macio, Natal - RN",
+    stats: "3 quartos • 3 banheiros • 180 m²",
+    price: "R$ 720.000",
+  },
+  {
+    type: "Apartamento",
+    title: "Apartamento vista mar em Areia Preta",
+    location: "Areia Preta, Natal - RN",
+    stats: "3 quartos • 2 banheiros • 90 m²",
+    price: "R$ 560.000",
+  },
+];
+
 export function LandingScreen({ onEnter }: LandingScreenProps) {
   return (
-    <div style={styles.root}>
+    <main className="home-page">
+      <header className="home-header">
+        <a className="brand" href="/" aria-label="HomeMatch inicio">
+          <span className="brand-mark" aria-hidden="true">
+            <span />
+          </span>
+          <span>
+            <strong>
+              HOME<span>MATCH</span>
+            </strong>
+            <small>O imovel ideal para voce.</small>
+          </span>
+        </a>
 
-      {/* Header */}
-      <header style={styles.header}>
-        <div style={{ color: colors.red }}>
-          <IconHome />
+        <nav className="main-nav" aria-label="Navegacao principal">
+          <a className="active" href="#inicio">
+            Inicio
+          </a>
+          <a href="#explorar">Explorar</a>
+          <a href="#favoritos">Favoritos</a>
+          <a href="#sobre">Sobre nos</a>
+          <a href="#contato">Contato</a>
+        </nav>
+
+        <div className="header-actions">
+          <button aria-label="Notificacoes" className="icon-button">
+            ♫
+            <span className="notification-dot">2</span>
+          </button>
+          <button aria-label="Favoritos" className="icon-button">
+            ♡
+          </button>
+          <button className="profile-button">
+            <span className="avatar">L</span>
+            Ola, Lucas
+            <span aria-hidden="true">⌄</span>
+          </button>
         </div>
-        <IconMenu />
       </header>
 
-      {/* Foto do edifício + formas decorativas */}
-      <div style={styles.buildingSection}>
-        <img
-          src="/src/assets/p.jpg"
-          alt="Edifício moderno"
-          style={styles.buildingImg}
-        />
-        <div style={styles.imageFade} />
-      </div>
-
-      {/* Conteúdo inferior esquerdo */}
-      <div style={styles.bottomContent}>
-        <div>
-          <h1 style={styles.heroTitle}>HOME<br />MATCH</h1>
-          <div style={styles.heroLine} />
-        </div>
-
-        <div style={styles.actions}>
-          <p style={styles.heroSub}>
-            uma nova solução<br />
-            para o mercado<br />
-            imobiliário
+      <section className="hero-section" id="inicio">
+        <div className="hero-copy">
+          <p className="eyebrow">HomeMatch IA</p>
+          <h1>
+            O imovel <span>ideal</span> para o seu momento de vida.
+          </h1>
+          <p className="hero-text">
+            Nossa IA entende o que voce procura e encontra as melhores opcoes
+            para morar, investir ou recomeçar.
           </p>
 
-          <button style={styles.ctaButton} onClick={onEnter}>
-            Buscar imóvel
-            <IconArrowRight size={18} />
-          </button>
+          <form className="ai-search" onSubmit={(event) => event.preventDefault()}>
+            <span className="search-spark" aria-hidden="true">
+              ✦
+            </span>
+            <label htmlFor="home-search" className="sr-only">
+              Conte para nossa IA o que voce procura
+            </label>
+            <input
+              id="home-search"
+              placeholder="Conte para nossa IA o que voce procura..."
+            />
+            <button type="button" onClick={onEnter}>
+              Buscar com IA
+              <span aria-hidden="true">✦</span>
+            </button>
+          </form>
+        </div>
 
-          <div style={styles.infoBadge}>
-            ...
+        <div className="hero-visual" aria-hidden="true">
+          <div className="sky-glow" />
+          <img src={heroBuilding} alt="" />
+        </div>
+      </section>
+
+      <section className="benefits-panel" aria-label="Diferenciais">
+        {benefits.map((benefit) => (
+          <article className="benefit-card" key={benefit.title}>
+            <span aria-hidden="true">{benefit.icon}</span>
+            <div>
+              <h2>{benefit.title}</h2>
+              <p>{benefit.text}</p>
+            </div>
+          </article>
+        ))}
+      </section>
+
+      <section className="suggestions" id="explorar">
+        <div className="section-heading">
+          <h2>
+            Sugestoes <span>para voce</span>
+          </h2>
+          <a href="#explorar">Ver todas as opcoes →</a>
+        </div>
+
+        <div className="property-grid">
+          {properties.map((property) => (
+            <article className="property-card" key={property.title}>
+              <div className="property-image">
+                <img src={propertyPhoto} alt="" />
+                <span>{property.type}</span>
+                <button aria-label={`Favoritar ${property.title}`}>♡</button>
+              </div>
+              <div className="property-info">
+                <h3>{property.title}</h3>
+                <p>{property.location}</p>
+                <small>{property.stats}</small>
+                <div>
+                  <strong>{property.price}</strong>
+                  <a href="#detalhes">Ver detalhes →</a>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="app-banner">
+        <div>
+          <span className="phone-mockup" aria-hidden="true" />
+          <div>
+            <h2>Leve o HomeMatch com voce.</h2>
+            <p>Baixe o app e tenha os melhores imoveis na palma da sua mao.</p>
           </div>
         </div>
-      </div>
-
-    </div>
+        <div className="store-buttons">
+          <button>App Store</button>
+          <button>Google Play</button>
+        </div>
+      </section>
+    </main>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  root: {
-    width: "100vw",
-    height: "100vh",
-    background: colors.bg,
-    position: "relative",
-    overflow: "hidden",
-  },
-
-  header: {
-    position: "relative",
-    zIndex: 10,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "20px 28px",
-  },
-
-  // Foto + formas
-  buildingSection: {
-    position: "absolute",
-    top: 64,        // espaço para o header
-    right: 0,
-    width: "35vw",
-    height: "calc(100vh - 64px)",
-  },
-  imageFade: {
-    position: "absolute",
-    inset: 0,
-    zIndex: 2,
-    boxShadow: "inset 20px 0 20px #F5F0EA, inset 0 20px 35px #F5F0EA",
-  },
-
-  blueCircle: {
-    position: "absolute",
-    top: "5%",
-    right: "5%",
-    width: "55%",
-    paddingBottom: "55%",
-    borderRadius: "50%",
-    background: colors.navy,
-  },
-  buildingImg: {
-    position: "absolute",
-    inset: 0,
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    objectPosition: "left center",
-
-    borderRadius: 0,
-  },
-
-  redArc: {
-    position: "absolute",
-    bottom: "-10%",
-    left: "-8%",
-    width: "30%",
-    paddingBottom: "30%",
-    borderRadius: "50%",
-    background: colors.red,
-    zIndex: 2,
-  },
-  dotGrid: {
-    position: "absolute",
-    bottom: "12%",
-    left: "4%",
-    width: 64,
-    height: 64,
-    backgroundImage: `radial-gradient(circle, ${colors.red} 1.5px, transparent 1.5px)`,
-    backgroundSize: "10px 10px",
-    opacity: 0.6,
-    zIndex: 3,
-  },
-
-  // Conteúdo inferior esquerdo
-  bottomContent: {
-    position: "absolute",
-    top: 64,
-    left: "5vw",
-    zIndex: 10,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
-    gap: 2,
-
-  },
-  actions: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: 20,
-  },
-  heroTitle: {
-    fontSize: "clamp(20px, 12vw, 200px)",
-    fontWeight: 700,
-    color: colors.red,
-    margin: 0,
-    lineHeight: 1.05,
-    letterSpacing: "-1.5px",
-    fontFamily: font.serif,
-    textAlign: "center",
-  },
-  heroLine: {
-    width: 44,
-    height: 3,
-    background: colors.red,
-    margin: "12px 0",
-  },
-  heroSub: {
-    fontSize: "clamp(14px, 1.4vw, 20px)",
-    color: "#222",
-    margin: 0,
-    lineHeight: 1.5,
-    fontStyle: "italic",
-    fontFamily: font.serif,
-  },
-
-  ctaButton: {
-    alignSelf: "flex-start",
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    background: colors.red,
-    color: colors.white,
-    border: "none",
-    borderRadius: 10,
-    padding: "12px 20px",
-    fontWeight: 700,
-    fontSize: 14,
-    cursor: "pointer",
-    fontFamily: font.sans,
-  },
-
-  infoBadge: {
-    background: colors.navy,
-    color: colors.white,
-    borderRadius: 10,
-    width: "auto",
-    minWidth: 160,
-    padding: "12px 16px",
-
-  },
-  sparkles: {
-    display: "flex",
-    gap: 2,
-    marginBottom: 6,
-  },
-  badgeText: {
-    margin: 0,
-    fontSize: 12,
-    lineHeight: 1.6,
-    fontFamily: font.sans,
-  },
-};
