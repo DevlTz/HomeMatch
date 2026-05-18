@@ -109,6 +109,9 @@ REST_FRAMEWORK = {
 
 }
 
+# Tempo de expiração do token de redefinição de senha (24 horas)
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # 24 horas em segundos
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -160,4 +163,4 @@ CELERY_TASK_SERIALIZER = "json"
 # O celery vai ter seus workers que vão ter suas funções já pré definidas nos arquivos tasks.py
 # Quando uma tarefa é terminada, o redis vai armazenar seu resultado
 
-GOOGLE_PLACES_API_KEY = config("GOOGLE_PLACES_API_KEY")
+GOOGLE_PLACES_API_KEY = config("GOOGLE_PLACES_API_KEY", default="")

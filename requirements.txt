@@ -5,19 +5,12 @@ django-filter==25.1
 django-cors-headers
 psycopg2-binary==2.9.10
 python-decouple==3.8
-<<<<<<< HEAD
 requests
 pandas
-=======
->>>>>>> fbc3088e55a1fadc42e692bd916a3dbf732cbf28
 Markdown==3.8
 pillow==11.2.1
 boto3
 openai
-<<<<<<< HEAD
 celery
 redis
 google-generativeai
-=======
-google-generativeai
->>>>>>> fbc3088e55a1fadc42e692bd916a3dbf732cbf28
