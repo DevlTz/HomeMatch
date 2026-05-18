@@ -69,3 +69,29 @@ class SearchPreference(models.Model):
 
     class Meta:
         db_table = "search_preferences"
+        
+class PropertyAlert(models.Model):
+    """
+    Alerta de imóveis - notifica usuário quando um imóvel com os critérios especificados for cadastrado.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='property_alerts'
+    )
+    filters = models.JSONField(
+        help_text="Filtros de busca salvos (mesmo formato da query string da API de busca)"
+    )
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_notified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "property_alerts"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_active']),
+        ]
+
+    def __str__(self):
+        return f"Alerta de {self.user.email} - {self.filters}"
