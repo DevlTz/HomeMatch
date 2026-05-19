@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeMatch | Detalhes do imóvel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="navbar">
+    <div class="navbar__inner">
+      <a class="brand" href="index.html" aria-label="HomeMatch">
+        <img class="brand-logo" src="assets/homematch-logo.jpeg" alt="HomeMatch">
+      </a>
+      <nav class="navbar__links">
+        <a href="index.html">Início</a>
+        <a href="imoveis.html">Imóveis</a>
+        <a class="btn btn--small" href="login.html" id="nav-auth-btn">Entrar</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" id="main-content">
+    <div class="loading-state"><div class="spinner"></div><br>Carregando imóvel…</div>
+  </main>
+
+  <footer class="footer">HomeMatch</footer>
+
+  <script type="module">
+    import {
+      getProperty, getReviews, createReview,
+      addFavorite, removeFavorite, getFavorites,
+      Auth, fmtPrice, TYPE_LABEL, PURPOSE_LABEL, BASE_URL
+    } from "./assets/api.js";
+
+    // Nav auth state 
+    if (Auth.isLoggedIn()) {
+      const btn = document.getElementById("nav-auth-btn");
+      btn.textContent = "Minha Conta";
+      btn.href = "perfil.html";
+    }
+
+    const main = document.getElementById("main-content");
+    const id   = new URLSearchParams(location.search).get("id");
+
+    // No id → show static demo content
+    if (!id) {
+      main.innerHTML = `
+        <div class="alert alert--error">
+          Nenhum imóvel selecionado. <a href="imoveis.html">Ver lista de imóveis →</a>
+        </div>`;
+      throw new Error("No id");
+    }
+
+    // Language helpers
+    function getBrowserLang() {
+      return (navigator.language || "pt").slice(0, 2).toLowerCase();
+    }
+
+    // AI attribute labels
+    const AI_ATTRIBUTE_LABELS = {
+      pt: {
+        "aesthetics.architecture.contemporary": "Arquitetura contemporânea",
+        "aesthetics.architecture.minimalist": "Arquitetura minimalista",
+        "aesthetics.architecture.postmodern": "Arquitetura pós-moderna",
+
+        "aesthetics.color.brightness": "Luminosidade",
+        "aesthetics.color.saturation": "Saturação das cores",
+        "aesthetics.color.visual_warmth": "Calor visual",
+
+        "current_state.cleanliness": "Limpeza",
+        "current_state.leisure": "Área de lazer",
+        "current_state.structural_integrity": "Integridade estrutural",
+        "current_state.ventilation": "Ventilação",
+
+        "livability.coziness": "Aconchego",
+        "livability.humidity": "Umidade aparente",
+        "livability.spaciousness": "Amplitude",
+        "livability.verdancy": "Presença de verde"
+      },
+
+      en: {
+        "aesthetics.architecture.contemporary": "Contemporary architecture",
+        "aesthetics.architecture.minimalist": "Minimalist architecture",
+        "aesthetics.architecture.postmodern": "Postmodern architecture",
+
+        "aesthetics.color.brightness": "Brightness",
+        "aesthetics.color.saturation": "Color saturation",
+        "aesthetics.color.visual_warmth": "Visual warmth",
+
+        "current_state.cleanliness": "Cleanliness",
+        "current_state.leisure": "Leisure area",
+        "current_state.structural_integrity": "Structural integrity",
+        "current_state.ventilation": "Ventilation",
+
+        "livability.coziness": "Coziness",
+        "livability.humidity": "Apparent humidity",
+        "livability.spaciousness": "Spaciousness",
+        "livability.verdancy": "Greenery"
+      }
+    };
+
+    function fallbackAttributeLabel(token) {
+      const label = token
+        .split(".")
+        .slice(-1)[0]
+        .replace(/_/g, " ");
+
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+
+    function formatAttributeLabel(token) {
+      const lang = getBrowserLang();
+      const labels = AI_ATTRIBUTE_LABELS[lang] || AI_ATTRIBUTE_LABELS.en;
+
+      return labels[token] || fallbackAttributeLabel(token);
+    }
+
+    function formatStrength(value) {
+      return `${Math.round(Number(value || 0) * 100)}%`;
+    }
+
+    // Image URL helper 
+    function resolveImageUrl(url) {
+      if (!url) return "";
+      if (url.startsWith("http://") || url.startsWith("https://")) return url;
+      return `${BASE_URL}${url}`;
+    }
+
+    // Stars helper
+    function stars(rating) {
+      const r = Math.round(rating || 0);
+      return "★".repeat(r) + "☆".repeat(5 - r);
+    }
+
+    // Gallery
+    function galleryHtml(images) {
+      if (!images?.length) {
+        // Fallback placeholder photos
+        return `
+          <div class="card-photo"></div>
+          <div class="card-photo photo-2"></div>
+          <div class="card-photo photo-3"></div>`;
+      }
+
+      return images.map((img, i) =>
+        `<img class="gallery-photo${i === 0 ? " gallery-photo--main" : ""}"
+              src="${resolveImageUrl(img.url)}"
+              alt="Foto ${i + 1}"
+              loading="${i === 0 ? "eager" : "lazy"}">`
+      ).join("");
+    }
+
+    // AI attributes
+    function aiAttributesHtml(attrs) {
+      if (!attrs?.length) {
+        return `<p class="muted" style="font-size:.9rem">
+          Análise visual ainda não realizada para este imóvel.</p>`;
+      }
+
+      const chips = attrs
+        .filter(a => Number(a.strength_mean) > 0)
+        .sort((a, b) => Number(b.strength_mean) - Number(a.strength_mean))
+        .slice(0, 8)
+        .map(a => `
+          <span class="chip chip--red" title="${a.attribute_token}">
+            ${formatAttributeLabel(a.attribute_token)}
+            <small>${formatStrength(a.strength_mean)}</small>
+          </span>
+        `)
+        .join("");
+
+      if (!chips) {
+        return `<p class="muted" style="font-size:.9rem">
+          Análise visual ainda não realizada para este imóvel.</p>`;
+      }
+
+      return `<div class="chips">${chips}</div>`;
+    }
+
+    // Render reviews
+    function renderReviews(reviews) {
+      if (!reviews.length) {
+        return `<p class="muted">Seja o primeiro a avaliar este imóvel.</p>`;
+      }
+
+      return reviews.map(r => `
+        <div class="review-item">
+          <div class="review-item__header">
+            <span class="review-item__author">${r.user_name ?? "Usuário"}</span>
+            <span class="stars">${stars(r.rating)}</span>
+          </div>
+          ${r.comment ? `<p class="review-item__comment">${r.comment}</p>` : ""}
+          <p class="review-item__date">${new Date(r.created_at).toLocaleDateString("pt-BR")}</p>
+        </div>`
+      ).join("");
+    }
+
+    // Full render
+    async function render() {
+      let prop, reviews, isFav = false;
+
+      try {
+        [prop, reviews] = await Promise.all([getProperty(id), getReviews(id)]);
+      } catch {
+        main.innerHTML = `<div class="alert alert--error">
+          Imóvel não encontrado. <a href="imoveis.html">Voltar →</a></div>`;
+        return;
+      }
+
+      // Check if already favorited
+      if (Auth.isLoggedIn()) {
+        try {
+          const favs = await getFavorites();
+          isFav = (favs || []).some(f => f.id === prop.id);
+        } catch {
+          // ignore favorite loading error
+        }
+      }
+
+      const typeLabel    = TYPE_LABEL[prop.type] ?? prop.type;
+      const purposeLabel = PURPOSE_LABEL[prop.property_purpose] ?? prop.property_purpose;
+      const rating       = prop.average_rating;
+
+      main.innerHTML = `
+        <section class="page-title">
+          <span class="kicker">${typeLabel} · ${purposeLabel}</span>
+          <h1>${prop.description?.split(".")[0] || `${typeLabel} em ${prop.neighborhood}`}</h1>
+          <p class="lead">
+            ${fmtPrice(prop.price)}${prop.property_purpose === "R" ? "/mês" : ""} · ${prop.neighborhood}, ${prop.city}
+          </p>
+        </section>
+
+        <section class="details-hero">
+          <div class="gallery">
+            ${galleryHtml(prop.images)}
+          </div>
+
+          <aside class="details-panel">
+            <strong class="price">
+              ${fmtPrice(prop.price)}
+              ${prop.property_purpose === "R" ? "<span style='font-size:.7em;font-weight:600;color:var(--hm-muted)'>/mês</span>" : ""}
+            </strong>
+
+            ${rating ? `
+              <div class="chips" style="margin:8px 0">
+                <span class="chip chip--red">
+                  ★ ${Number(rating).toFixed(1)} (${reviews.length} avaliação${reviews.length !== 1 ? "ões" : ""})
+                </span>
+              </div>` : ""}
+
+            <p class="muted">${prop.description ?? ""}</p>
+
+            <div class="stat-grid">
+              <div class="stat">
+                <strong>${prop.rooms?.bedrooms ?? "—"}</strong>
+                <span>quarto${prop.rooms?.bedrooms !== 1 ? "s" : ""}</span>
+              </div>
+              <div class="stat">
+                <strong>${prop.rooms?.bathrooms ?? "—"}</strong>
+                <span>banheiro${prop.rooms?.bathrooms !== 1 ? "s" : ""}</span>
+              </div>
+              <div class="stat">
+                <strong>${prop.area}</strong>
+                <span>m²</span>
+              </div>
+            </div>
+
+            <div class="chips">
+              ${prop.rooms?.parking_spots ? `<span class="chip">${prop.rooms.parking_spots} vaga${prop.rooms.parking_spots !== 1 ? "s" : ""}</span>` : ""}
+              ${prop.has_mobilia ? `<span class="chip">Mobiliado</span>` : ""}
+              ${prop.condo?.name ? `<span class="chip">Cond. ${prop.condo.name}</span>` : ""}
+              ${prop.floor_number ? `<span class="chip">${prop.floor_number}º andar</span>` : ""}
+            </div>
+
+            <div class="ai-box">
+              <h3>Análise visual por IA</h3>
+              ${aiAttributesHtml(prop.subjective_attributes)}
+            </div>
+
+            <div class="details-actions">
+              ${Auth.isLoggedIn()
+                ? `<button class="btn" id="btn-fav">${isFav ? "♥ Favoritado" : "♡ Favoritar"}</button>`
+                : `<a class="btn" href="login.html?next=detalhes.html?id=${id}">Favoritar</a>`}
+              <a class="btn btn--ghost" href="imoveis.html">← Ver outros</a>
+            </div>
+          </aside>
+        </section>
+
+        <section class="description-section">
+          <h2>Descrição</h2>
+          <p class="lead">${prop.description ?? "Sem descrição."}</p>
+          ${prop.address ? `<p class="muted">📍 ${prop.address}, ${prop.neighborhood}, ${prop.city}</p>` : ""}
+          ${prop.owner_name ? `<p class="muted">Anunciante: <strong>${prop.owner_name}</strong></p>` : ""}
+        </section>
+
+        <section class="reviews-section">
+          <h2>Avaliações</h2>
+          <div class="review-list" id="review-list">
+            ${renderReviews(reviews)}
+          </div>
+
+          ${Auth.isLoggedIn() ? `
+          <div class="review-form">
+            <h3>Deixe sua avaliação</h3>
+            <div id="review-alert"></div>
+
+            <div class="field">
+              <label for="r-rating">Nota (1–5)</label>
+              <select id="r-rating">
+                <option value="5">★★★★★ Excelente</option>
+                <option value="4">★★★★☆ Muito bom</option>
+                <option value="3">★★★☆☆ Bom</option>
+                <option value="2">★★☆☆☆ Regular</option>
+                <option value="1">★☆☆☆☆ Ruim</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="r-comment">Comentário (opcional)</label>
+              <textarea
+                id="r-comment"
+                rows="3"
+                style="width:100%;border:1px solid var(--hm-border);border-radius:14px;padding:10px 12px;font:inherit;resize:vertical;"
+                placeholder="Compartilhe sua experiência…"></textarea>
+            </div>
+
+            <button class="btn" id="btn-review">Enviar avaliação</button>
+          </div>` : `<p class="muted"><a href="login.html">Entre</a> para deixar uma avaliação.</p>`}
+        </section>`;
+
+      // ── Favorite toggle ────────────────────────────────────────────────────
+      const favBtn = document.getElementById("btn-fav");
+
+      if (favBtn) {
+        favBtn.addEventListener("click", async () => {
+          try {
+            if (isFav) {
+              await removeFavorite(prop.id);
+              isFav = false;
+              favBtn.textContent = "♡ Favoritar";
+            } else {
+              await addFavorite(prop.id);
+              isFav = true;
+              favBtn.textContent = "♥ Favoritado";
+            }
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+      }
+
+      // ── Review submit ──────────────────────────────────────────────────────
+      const revBtn = document.getElementById("btn-review");
+
+      if (revBtn) {
+        revBtn.addEventListener("click", async () => {
+          const alertEl = document.getElementById("review-alert");
+          alertEl.innerHTML = "";
+
+          const rating  = +document.getElementById("r-rating").value;
+          const comment = document.getElementById("r-comment").value.trim();
+
+          revBtn.disabled = true;
+
+          try {
+            await createReview(id, rating, comment);
+
+            const newReviews = await getReviews(id);
+            document.getElementById("review-list").innerHTML = renderReviews(newReviews);
+
+            alertEl.innerHTML = `<div class="alert alert--success">Avaliação enviada!</div>`;
+          } catch (err) {
+            const data = err.data || {};
+            const msg = data.detail
+              || Object.values(data).flat().find(Boolean)
+              || "Erro ao enviar avaliação.";
+
+            alertEl.innerHTML = `<div class="alert alert--error">${msg}</div>`;
+          }
+
+          revBtn.disabled = false;
+        });
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

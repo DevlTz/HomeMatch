@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeMatch | Cadastro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="navbar">
+    <div class="navbar__inner">
+      <a class="brand" href="index.html" aria-label="HomeMatch">
+        <img class="brand-logo" src="assets/homematch-logo.jpeg" alt="HomeMatch">
+      </a>
+      <nav class="navbar__links">
+        <a href="index.html">Início</a>
+        <a href="imoveis.html">Imóveis</a>
+        <a class="btn btn--small" href="login.html">Entrar</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container auth-layout">
+    <section>
+      <span class="kicker">Novo por aqui?</span>
+      <h1>Crie sua conta e encontre seu lar.</h1>
+      <p class="lead">
+        Cadastre-se como <strong>buscador</strong> para salvar favoritos e preferências,
+        ou como <strong>anunciante</strong> para publicar seus imóveis.
+      </p>
+    </section>
+
+    <form class="auth-card" id="form-register" novalidate>
+      <h2>Cadastro</h2>
+      <div id="alert-container"></div>
+
+      <div class="field">
+        <label for="name">Nome completo</label>
+        <input id="name" type="text" placeholder="Seu nome" required autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="email">E-mail</label>
+        <input id="email" type="email" placeholder="usuario@email.com" required autocomplete="email">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="senha">Senha</label>
+          <input id="senha" type="password" placeholder="Mín. 8 caracteres" required autocomplete="new-password" minlength="8">
+        </div>
+        <div class="field">
+          <label for="senha2">Confirmar senha</label>
+          <input id="senha2" type="password" placeholder="Repita a senha" required autocomplete="new-password">
+        </div>
+      </div>
+      <div class="field">
+        <label for="user-type">Tipo de conta</label>
+        <select id="user-type">
+          <option value="S">Buscador — quero encontrar imóveis</option>
+          <option value="A">Anunciante — quero publicar imóveis</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn--block" id="btn-submit">Criar conta</button>
+      <p class="auth-link">Já tem conta? <a href="login.html">Entrar</a></p>
+    </form>
+  </main>
+
+  <script type="module">
+    import { register } from "./assets/api.js";
+
+    const form    = document.getElementById("form-register");
+    const btnSub  = document.getElementById("btn-submit");
+    const alertEl = document.getElementById("alert-container");
+
+    function showAlert(msg, type = "error") {
+      alertEl.innerHTML = `<div class="alert alert--${type}">${msg}</div>`;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      alertEl.innerHTML = "";
+
+      const name      = document.getElementById("name").value.trim();
+      const email     = document.getElementById("email").value.trim();
+      const senha     = document.getElementById("senha").value;
+      const senha2    = document.getElementById("senha2").value;
+      const user_type = document.getElementById("user-type").value;
+
+      if (!name || !email || !senha) { showAlert("Preencha todos os campos obrigatórios."); return; }
+      if (senha !== senha2)           { showAlert("As senhas não coincidem."); return; }
+      if (senha.length < 8)           { showAlert("A senha precisa ter pelo menos 8 caracteres."); return; }
+
+      btnSub.disabled = true;
+      btnSub.textContent = "Criando conta…";
+      try {
+        await register(name, email, senha, user_type);
+        showAlert("Conta criada! Redirecionando para o login…", "success");
+        setTimeout(() => { window.location.href = "login.html"; }, 1500);
+      } catch (err) {
+        // Django REST returns field-level errors as { field: ["msg"] }
+        const data = err.data || {};
+        const firstError = data.detail
+          || Object.values(data).flat().find(Boolean)
+          || "Erro ao criar conta.";
+        showAlert(firstError);
+        btnSub.disabled = false;
+        btnSub.textContent = "Criar conta";
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeMatch | Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="navbar">
+    <div class="navbar__inner">
+      <a class="brand" href="index.html" aria-label="HomeMatch">
+        <img class="brand-logo" src="assets/homematch-logo.jpeg" alt="HomeMatch">
+      </a>
+      <nav class="navbar__links">
+        <a href="index.html">Início</a>
+        <a href="imoveis.html">Imóveis</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container auth-layout">
+    <section>
+      <span class="kicker">Acesso do usuário</span>
+      <h1>Entre para salvar buscas e favoritos.</h1>
+      <p class="lead">
+        Autenticação via JWT. Acesse seu perfil, favoritos e preferências de busca.
+      </p>
+    </section>
+
+    <form class="auth-card" id="form-login" novalidate>
+      <h2>Login</h2>
+      <div id="alert-container"></div>
+      <div class="field">
+        <label for="email">E-mail</label>
+        <input id="email" type="email" placeholder="usuario@email.com" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="senha">Senha</label>
+        <input id="senha" type="password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn--block" id="btn-submit">Entrar</button>
+      <button type="button" class="btn btn--ghost btn--block" onclick="window.location.href='cadastro.html'">Criar conta</button>
+      <p class="auth-link">Sem conta ainda? <a href="cadastro.html">Cadastre-se grátis</a></p>
+    </form>
+  </main>
+
+  <script type="module">
+    import { login, Auth } from "./assets/api.js";
+
+    // Already logged in → go to profile
+    if (Auth.isLoggedIn()) window.location.href = "perfil.html";
+
+    const form    = document.getElementById("form-login");
+    const btnSub  = document.getElementById("btn-submit");
+    const alertEl = document.getElementById("alert-container");
+
+    function showAlert(msg, type = "error") {
+      alertEl.innerHTML = `<div class="alert alert--${type}">${msg}</div>`;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      alertEl.innerHTML = "";
+      const email = document.getElementById("email").value.trim();
+      const senha = document.getElementById("senha").value;
+
+      if (!email || !senha) { showAlert("Preencha e-mail e senha."); return; }
+
+      btnSub.disabled = true;
+      btnSub.textContent = "Entrando…";
+      try {
+        await login(email, senha);
+        // Redirect to the page they came from, or profile
+        const next = new URLSearchParams(location.search).get("next") || "perfil.html";
+        window.location.href = next;
+      } catch (err) {
+        const data = err.data || {};
+        showAlert(data.detail || "E-mail ou senha incorretos.");
+        btnSub.disabled = false;
+        btnSub.textContent = "Entrar";
+      }
+    });
+  </script>
+</body>
+</html>

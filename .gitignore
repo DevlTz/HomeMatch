@@ -21,4 +21,6 @@ postgres_data/
 .DS_Store
 Thumbs.db
 
-frontend/
+# frontend/
+
+property_examples/

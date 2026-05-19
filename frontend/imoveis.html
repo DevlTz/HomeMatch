@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeMatch | Imóveis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="navbar">
+    <div class="navbar__inner">
+      <a class="brand" href="index.html" aria-label="HomeMatch">
+        <img class="brand-logo" src="assets/homematch-logo.jpeg" alt="HomeMatch">
+      </a>
+
+      <nav class="navbar__links">
+        <a href="index.html">Início</a>
+        <a href="imoveis.html">Imóveis</a>
+        <a class="btn btn--small" href="login.html" id="nav-auth-btn">Entrar</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="page-title">
+      <span class="kicker">Buscar imóveis</span>
+      <h1>Encontre o lugar certo.</h1>
+    </section>
+
+    <div id="search-notice" style="display:none; margin-bottom:18px;">
+      <div class="ai-box" style="margin:0">
+        <strong>Busca por linguagem natural:</strong> <span id="query-text"></span>
+        <p class="muted" style="margin:6px 0 0; font-size:.9rem;">
+          A consulta será enviada ao módulo de busca do backend.
+        </p>
+      </div>
+    </div>
+
+    <div class="filter-bar" id="filter-bar">
+      <div class="filter-group filter-group--wide">
+        <label for="f-search">Busca</label>
+        <input id="f-search" type="text" placeholder="Ex: casa clara, arejada e aconchegante">
+      </div>
+
+      <div class="filter-group filter-group--wide">
+        <label for="f-city">Cidade</label>
+        <input id="f-city" type="text" placeholder="Ex: Natal">
+      </div>
+
+      <div class="filter-group">
+        <label for="f-neighborhood">Bairro</label>
+        <input id="f-neighborhood" type="text" placeholder="Ex: Ponta Negra">
+      </div>
+
+      <div class="filter-group">
+        <label for="f-type">Tipo</label>
+        <select id="f-type">
+          <option value="">Todos</option>
+          <option value="H">Casa</option>
+          <option value="A">Apartamento</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="f-purpose">Finalidade</label>
+        <select id="f-purpose">
+          <option value="">Todas</option>
+          <option value="S">Venda</option>
+          <option value="R">Aluguel</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="f-bedrooms">Quartos</label>
+        <select id="f-bedrooms">
+          <option value="">Qualquer</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="f-min-price">Preço mín.</label>
+        <input id="f-min-price" type="number" placeholder="R$ 0" min="0">
+      </div>
+
+      <div class="filter-group">
+        <label for="f-max-price">Preço máx.</label>
+        <input id="f-max-price" type="number" placeholder="Sem limite" min="0">
+      </div>
+
+      <div class="filter-group">
+        <label>&nbsp;</label>
+        <button class="btn" id="btn-filter">Buscar</button>
+      </div>
+    </div>
+
+    <div class="results-bar">
+      <span id="results-count"></span>
+    </div>
+
+    <div id="property-grid" class="property-grid"></div>
+  </main>
+
+  <footer class="footer">HomeMatch</footer>
+
+  <script type="module">
+    import {
+      getProperties,
+      searchProperties,
+      Auth,
+      fmtPrice,
+      TYPE_LABEL,
+      PURPOSE_LABEL,
+      BASE_URL
+    } from "./assets/api.js";
+
+    if (Auth.isLoggedIn()) {
+      const btn = document.getElementById("nav-auth-btn");
+      btn.textContent = "Minha Conta";
+      btn.href = "perfil.html";
+    }
+
+    const urlParams = new URLSearchParams(location.search);
+
+    const grid = document.getElementById("property-grid");
+    const countEl = document.getElementById("results-count");
+
+    document.getElementById("f-search").value = urlParams.get("q") || "";
+    document.getElementById("f-city").value = urlParams.get("city") || "";
+
+    function resolveImageUrl(url) {
+      if (!url) return "";
+      if (url.startsWith("http://") || url.startsWith("https://")) return url;
+      return `${BASE_URL}${url}`;
+    }
+
+    function buildParams() {
+      return {
+        q: document.getElementById("f-search").value.trim(),
+        city: document.getElementById("f-city").value.trim(),
+        neighborhood: document.getElementById("f-neighborhood").value.trim(),
+        type: document.getElementById("f-type").value,
+        property_purpose: document.getElementById("f-purpose").value,
+        bedrooms: document.getElementById("f-bedrooms").value,
+        min_price: document.getElementById("f-min-price").value,
+        max_price: document.getElementById("f-max-price").value,
+      };
+    }
+
+    function buildPublicUrl(params) {
+      const qs = new URLSearchParams();
+
+      if (params.q) qs.set("q", params.q);
+      if (params.city) qs.set("city", params.city);
+
+      return qs.toString()
+        ? `imoveis.html?${qs.toString()}`
+        : "imoveis.html";
+    }
+
+    function syncUrl(params) {
+      history.replaceState(null, "", buildPublicUrl(params));
+    }
+
+    function renderSearchNotice(query) {
+      const notice = document.getElementById("search-notice");
+      const text = document.getElementById("query-text");
+
+      if (!query) {
+        notice.style.display = "none";
+        text.textContent = "";
+        return;
+      }
+
+      notice.style.display = "block";
+      text.textContent = `"${query}"`;
+    }
+
+    function renderCard(p) {
+      const imgSrc = p.images?.[0]?.url ? resolveImageUrl(p.images[0].url) : null;
+
+      const photoHtml = imgSrc
+        ? `<img src="${imgSrc}" alt="Foto do imóvel" loading="lazy" onerror="this.remove()">`
+        : "";
+
+      const typeLabel = TYPE_LABEL[p.type] ?? p.type;
+      const purposeLabel = PURPOSE_LABEL[p.property_purpose] ?? p.property_purpose;
+      const beds = p.rooms?.bedrooms ?? "—";
+      const baths = p.rooms?.bathrooms ?? "—";
+
+      const ratingHtml = p.average_rating
+        ? `<div class="chips"><span class="chip chip--red">★ ${Number(p.average_rating).toFixed(1)}</span></div>`
+        : "";
+
+      return `
+        <article class="property-card">
+          <a href="detalhes.html?id=${p.id}">
+            <div class="property-card__photo">
+              ${photoHtml}
+              <span class="property-card__badge">${typeLabel}</span>
+              <span class="property-card__badge property-card__badge--red" style="left:auto;right:14px;">
+                ${purposeLabel}
+              </span>
+            </div>
+          </a>
+
+          <div class="property-card__body">
+            <div class="property-card__price">
+              ${fmtPrice(p.price)}
+              <span style="font-size:.75rem;font-weight:600;color:var(--hm-muted)">
+                ${p.property_purpose === "R" ? "/mês" : ""}
+              </span>
+            </div>
+
+            <p class="property-card__address">${p.neighborhood}, ${p.city}</p>
+
+            <div class="property-card__stats">
+              <span>🛏 ${beds} quarto${beds !== 1 ? "s" : ""}</span>
+              <span>🚿 ${baths} banheiro${baths !== 1 ? "s" : ""}</span>
+              <span>📐 ${p.area} m²</span>
+            </div>
+
+            ${ratingHtml}
+
+            <a
+              class="btn btn--ghost btn--small"
+              style="margin-top:14px;width:100%;text-align:center;"
+              href="detalhes.html?id=${p.id}">
+              Ver detalhes
+            </a>
+          </div>
+        </article>`;
+    }
+
+    function renderLoading() {
+      grid.innerHTML = `
+        <div class="loading-state" style="grid-column:1/-1">
+          <div class="spinner"></div><br>Carregando imóveis…
+        </div>`;
+      countEl.textContent = "";
+    }
+
+    function renderEmpty() {
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-state__icon">🏠</div>
+          <p class="muted">Nenhum imóvel encontrado com esses critérios.</p>
+        </div>`;
+    }
+
+    function renderError(msg) {
+      grid.innerHTML = `<div class="alert alert--error" style="grid-column:1/-1">${msg}</div>`;
+    }
+
+    async function load() {
+      renderLoading();
+
+      const params = buildParams();
+
+      syncUrl(params);
+      renderSearchNotice(params.q);
+
+      try {
+        const data = params.q
+          ? await searchProperties(params)
+          : await getProperties(params);
+
+        const items = Array.isArray(data) ? data : (data.results ?? []);
+
+        countEl.textContent =
+          `${items.length} imóvel${items.length !== 1 ? "is" : ""} encontrado${items.length !== 1 ? "s" : ""}`;
+
+        if (!items.length) {
+          renderEmpty();
+          return;
+        }
+
+        grid.innerHTML = items.map(renderCard).join("");
+      } catch (err) {
+        renderError(
+          params.q
+            ? "Não foi possível executar a busca. Verifique se o endpoint de busca está disponível."
+            : "Não foi possível carregar os imóveis. Verifique se o servidor está rodando."
+        );
+
+        console.error(err);
+      }
+    }
+
+    document.getElementById("btn-filter").addEventListener("click", load);
+
+    document.getElementById("filter-bar").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        load();
+      }
+    });
+
+    load();
+  </script>
+</body>
+</html>

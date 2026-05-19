@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeMatch | Minha Conta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="navbar">
+    <div class="navbar__inner">
+      <a class="brand" href="index.html" aria-label="HomeMatch">
+        <img class="brand-logo" src="assets/homematch-logo.jpeg" alt="HomeMatch">
+      </a>
+      <nav class="navbar__links">
+        <a href="index.html">Início</a>
+        <a href="imoveis.html">Imóveis</a>
+        <a class="btn btn--small btn--ghost" id="btn-logout">Sair</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="main-content">
+      <div class="loading-state"><div class="spinner"></div><br>Carregando perfil…</div>
+    </div>
+  </main>
+
+  <footer class="footer">HomeMatch</footer>
+
+  <script type="module">
+    import {
+      Auth, logout, getMe, updateMe, getFavorites, removeFavorite,
+      fmtPrice, TYPE_LABEL, PURPOSE_LABEL
+    } from "./assets/api.js";
+
+    // Guard: must be logged in
+    if (!Auth.isLoggedIn()) {
+      window.location.href = "login.html?next=perfil.html";
+      throw new Error("Not logged in");
+    }
+
+    // Logout
+    document.getElementById("btn-logout").addEventListener("click", async () => {
+      await logout();
+      window.location.href = "index.html";
+    });
+
+    const main = document.getElementById("main-content");
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    const USER_TYPE_LABEL = { S: "Buscador", A: "Anunciante" };
+
+    function avatarInitial(name) {
+      return (name ?? "U")[0].toUpperCase();
+    }
+
+    function renderFavCard(p) {
+      const typeLabel    = TYPE_LABEL[p.type] ?? p.type;
+      const purposeLabel = PURPOSE_LABEL[p.property_purpose] ?? p.property_purpose;
+      const imgSrc       = p.images?.[0]?.url ?? null;
+      return `
+        <article class="property-card" data-id="${p.id}">
+          <a href="detalhes.html?id=${p.id}">
+            <div class="property-card__photo">
+              ${imgSrc ? `<img src="${imgSrc}" alt="Foto" loading="lazy">` : ""}
+              <span class="property-card__badge">${typeLabel}</span>
+              <span class="property-card__badge property-card__badge--red" style="left:auto;right:14px;">${purposeLabel}</span>
+            </div>
+          </a>
+          <div class="property-card__body">
+            <div class="property-card__price">${fmtPrice(p.price)}${p.property_purpose === "R" ? "<span style='font-size:.75rem;color:var(--hm-muted)'>/mês</span>" : ""}</div>
+            <p class="property-card__address">${p.neighborhood}, ${p.city}</p>
+            <div class="property-card__stats">
+              <span>🛏 ${p.rooms?.bedrooms ?? "—"}</span>
+              <span>🚿 ${p.rooms?.bathrooms ?? "—"}</span>
+              <span>📐 ${p.area} m²</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px;">
+              <a class="btn btn--ghost btn--small" style="flex:1;text-align:center;" href="detalhes.html?id=${p.id}">Ver</a>
+              <button class="btn btn--small" style="background:#fff;color:var(--hm-red);border:1px solid var(--hm-border);box-shadow:none;" data-remove-fav="${p.id}">Remover</button>
+            </div>
+          </div>
+        </article>`;
+    }
+
+    // Render page
+    async function render() {
+      let user, favs;
+      try {
+        [user, favs] = await Promise.all([getMe(), getFavorites()]);
+      } catch {
+        main.innerHTML = `<div class="alert alert--error">Sessão expirada. <a href="login.html">Faça login novamente</a></div>`;
+        Auth.clear();
+        return;
+      }
+
+      const userTypeBadge = USER_TYPE_LABEL[user.user_type] ?? user.user_type;
+      const favItems       = Array.isArray(favs) ? favs : (favs?.results ?? []);
+
+      main.innerHTML = `
+        <div class="profile-layout">
+          <!-- ── Sidebar ───────────────────────────────────────────── -->
+          <aside>
+            <div class="profile-card">
+              <div class="profile-card__avatar">${avatarInitial(user.name)}</div>
+              <div class="profile-card__name">${user.name}</div>
+              <div class="profile-card__email">${user.email}</div>
+              <span class="badge badge--blue" style="margin-top:8px;">${userTypeBadge}</span>
+              <nav class="profile-nav">
+                <a href="#favoritos" class="active">♥ Favoritos (${favItems.length})</a>
+                <a href="#dados">✎ Meus dados</a>
+              </nav>
+            </div>
+          </aside>
+
+          <!-- ── Main content ─────────────────────────────────────── -->
+          <div class="profile-content">
+
+            <!-- Favorites -->
+            <section id="favoritos">
+              <h2 class="profile-section-title">Meus favoritos</h2>
+              ${favItems.length
+                ? `<div class="property-grid" id="fav-grid">${favItems.map(renderFavCard).join("")}</div>`
+                : `<div class="empty-state"><div class="empty-state__icon">🏠</div><p class="muted">Você ainda não favoritou nenhum imóvel.<br><a href="imoveis.html">Explorar imóveis →</a></p></div>`}
+            </section>
+
+            <!-- Profile edit -->
+            <section id="dados" style="margin-top:48px;">
+              <h2 class="profile-section-title">Meus dados</h2>
+              <div id="profile-alert"></div>
+              <form id="form-profile" style="max-width:480px;">
+                <div class="field">
+                  <label for="p-name">Nome</label>
+                  <input id="p-name" type="text" value="${user.name}" required>
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="p-age">Idade</label>
+                    <input id="p-age" type="number" value="${user.age ?? ""}" min="1" max="120">
+                  </div>
+                  <div class="field">
+                    <label for="p-gender">Gênero</label>
+                    <input id="p-gender" type="text" value="${user.gender ?? ""}" placeholder="Opcional">
+                  </div>
+                </div>
+                <div class="field">
+                  <label>E-mail (somente leitura)</label>
+                  <input type="email" value="${user.email}" disabled style="background:#f4f4f4;">
+                </div>
+                <button type="submit" class="btn" id="btn-save">Salvar alterações</button>
+              </form>
+            </section>
+
+          </div>
+        </div>`;
+
+      // ── Remove favorite ────────────────────────────────────────────────────
+      document.querySelectorAll("[data-remove-fav]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const pid = +btn.dataset.removeFav;
+          btn.disabled = true;
+          try {
+            await removeFavorite(pid);
+            btn.closest(".property-card").remove();
+          } catch (err) {
+            alert(err.message);
+            btn.disabled = false;
+          }
+        });
+      });
+
+      // ── Update profile ─────────────────────────────────────────────────────
+      document.getElementById("form-profile").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const alertEl = document.getElementById("profile-alert");
+        alertEl.innerHTML = "";
+        const saveBtn = document.getElementById("btn-save");
+        saveBtn.disabled = true;
+        try {
+          await updateMe({
+            name:   document.getElementById("p-name").value.trim(),
+            age:    document.getElementById("p-age").value || null,
+            gender: document.getElementById("p-gender").value.trim() || null,
+          });
+          alertEl.innerHTML = `<div class="alert alert--success">Perfil atualizado!</div>`;
+        } catch (err) {
+          alertEl.innerHTML = `<div class="alert alert--error">${err.message}</div>`;
+        }
+        saveBtn.disabled = false;
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>

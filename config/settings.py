@@ -61,6 +61,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
             ],
         },
+        "DIRS": [BASE_DIR / "frontend"],
     },
 ]
 
@@ -164,3 +165,5 @@ CELERY_TASK_SERIALIZER = "json"
 # Quando uma tarefa é terminada, o redis vai armazenar seu resultado
 
 GOOGLE_PLACES_API_KEY = config("GOOGLE_PLACES_API_KEY", default="")
+
+STATICFILES_DIRS = [BASE_DIR / "frontend"]
