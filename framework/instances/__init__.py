@@ -1,0 +1,1 @@
+# HomeMatch Framework — instâncias concretas
